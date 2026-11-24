@@ -1,0 +1,5 @@
+{
+  "experiment_id": "E3_L3_auto",
+  "selection_method": "ranking médio em profundidade, gates 2Q, operações totais e log10 da proxy de fidelidade quando disponível",
+  "warning": "A seleção é multicritério auxiliar; a decisão final exige interpretação dos resultados e das limitações do proxy. O circuito foi recompilado com os mesmos parâmetros para exportação."
+}

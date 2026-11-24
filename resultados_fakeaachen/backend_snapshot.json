@@ -1,0 +1,23 @@
+{
+  "backend_name": "fake_aachen",
+  "backend_class": "FakeAachen",
+  "num_qubits": 156,
+  "coupling_edges_undirected": 176,
+  "basis_operation_names": [
+    "id",
+    "rz",
+    "delay",
+    "x",
+    "cz",
+    "if_else",
+    "sx",
+    "measure",
+    "reset"
+  ],
+  "median_2q_error_over_available_native_edges": 0.0015352347706142633,
+  "median_readout_error": 0.00738525390625,
+  "median_1q_gate_error": 0.00015915490428007226,
+  "median_T1_s": 0.0002323472188556241,
+  "median_T2_s": 0.0002554271032275265,
+  "note": "Valores provenientes do snapshot local do FakeProvider; não são calibração em tempo real."
+}

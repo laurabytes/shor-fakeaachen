@@ -1,0 +1,20 @@
+.venv/
+__pycache__/
+*.py[cod]
+.DS_Store
+.env
+.env.*
+!.env.example
+.ipynb_checkpoints/
+
+# Circuitos serializados gerados pelo Qiskit
+*.qpy
+
+# Saidas extensas das simulacoes MPS
+resultados_fakeaachen/validacao_compacta/*_ideal_mps_*.json
+resultados_fakeaachen/validacao_compacta/*_noisy_mps_*.json
+
+# Arquivos antigos de backup
+shor_otimizado_backup_*.py
+shor_otimizado_antes_memoria_2.py
+/resultados.csv

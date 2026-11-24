@@ -1,0 +1,444 @@
+{
+  "validation_type": "reduced_validation_with_explicit_resource_limit",
+  "backend": "fake_aachen",
+  "N": 77,
+  "a": 30,
+  "logical_original_ideal": {
+    "method": "simulação ideal NumPy do circuito lógico de busca de ordem (módulo shor_quantum.py)",
+    "not_aer": true,
+    "N": 77,
+    "a": 30,
+    "shots_requested": 1024,
+    "shots_obtained": 1024,
+    "seed": 42,
+    "distinct_measurement_outcomes": 141,
+    "measurement_counts": {
+      "00000000000000": 41,
+      "00001000011011": 1,
+      "00001000011110": 1,
+      "00001000100010": 27,
+      "00010001000100": 28,
+      "00010001000101": 3,
+      "00010001000111": 1,
+      "00010001010010": 1,
+      "00010001101000": 1,
+      "00011001010000": 1,
+      "00011001100000": 1,
+      "00011001100011": 1,
+      "00011001100101": 2,
+      "00011001100110": 22,
+      "00011001100111": 5,
+      "00011001101000": 1,
+      "00100010000001": 1,
+      "00100010000011": 1,
+      "00100010001000": 15,
+      "00100010001001": 16,
+      "00100010001010": 1,
+      "00100010001011": 2,
+      "00100010100000": 1,
+      "00101010011011": 1,
+      "00101010100111": 1,
+      "00101010101010": 6,
+      "00101010101011": 21,
+      "00101010101100": 1,
+      "00110011001100": 1,
+      "00110011001101": 23,
+      "00110011001110": 1,
+      "00110011100101": 1,
+      "00111011101111": 32,
+      "01000100010001": 31,
+      "01001100010101": 1,
+      "01001100110010": 2,
+      "01001100110011": 24,
+      "01001100110100": 1,
+      "01001100110110": 1,
+      "01010101010100": 3,
+      "01010101010101": 28,
+      "01010101010110": 3,
+      "01010101010111": 1,
+      "01010101011011": 1,
+      "01010101100010": 1,
+      "01011101110100": 1,
+      "01011101110101": 1,
+      "01011101110110": 2,
+      "01011101110111": 8,
+      "01011101111000": 13,
+      "01011101111110": 1,
+      "01011101111111": 1,
+      "01011110001101": 1,
+      "01011110010110": 1,
+      "01100101111000": 1,
+      "01100110010111": 1,
+      "01100110011001": 12,
+      "01100110011010": 17,
+      "01100110011011": 1,
+      "01100110011110": 1,
+      "01100110111101": 1,
+      "01101110111011": 2,
+      "01101110111100": 20,
+      "01101110111101": 2,
+      "01101111000001": 1,
+      "01101111010000": 1,
+      "01101111101011": 1,
+      "01110100111110": 1,
+      "01110111011101": 2,
+      "01110111011110": 33,
+      "10000000000000": 30,
+      "10001000100010": 25,
+      "10001000100011": 1,
+      "10010000110111": 1,
+      "10010001000001": 1,
+      "10010001000010": 1,
+      "10010001000100": 24,
+      "10010001000101": 3,
+      "10010001000111": 1,
+      "10011001100100": 1,
+      "10011001100101": 4,
+      "10011001100110": 22,
+      "10011001100111": 7,
+      "10011001101001": 1,
+      "10100010000101": 1,
+      "10100010000110": 1,
+      "10100010000111": 1,
+      "10100010001000": 14,
+      "10100010001001": 18,
+      "10100010001101": 1,
+      "10101010100101": 1,
+      "10101010100110": 1,
+      "10101010101001": 2,
+      "10101010101010": 8,
+      "10101010101011": 26,
+      "10101010101100": 1,
+      "10101010101110": 1,
+      "10110011001011": 1,
+      "10110011001100": 3,
+      "10110011001101": 24,
+      "10110011001110": 1,
+      "10111011100101": 1,
+      "10111011101111": 50,
+      "11000100010001": 36,
+      "11001100110000": 1,
+      "11001100110010": 1,
+      "11001100110011": 32,
+      "11001100110100": 1,
+      "11001100110101": 1,
+      "11001100110110": 1,
+      "11010101010000": 1,
+      "11010101010010": 1,
+      "11010101010100": 2,
+      "11010101010101": 33,
+      "11010101010110": 7,
+      "11010101010111": 1,
+      "11010101011000": 1,
+      "11010101011001": 1,
+      "11010101011101": 1,
+      "11011101110001": 1,
+      "11011101110100": 1,
+      "11011101110111": 14,
+      "11011101111000": 11,
+      "11011101111001": 1,
+      "11011101111010": 1,
+      "11011110000011": 1,
+      "11100110010100": 1,
+      "11100110010111": 1,
+      "11100110011001": 9,
+      "11100110011010": 20,
+      "11100110011011": 2,
+      "11100110011100": 1,
+      "11101110110101": 1,
+      "11101110111011": 5,
+      "11101110111100": 29,
+      "11101110111101": 2,
+      "11110111011010": 1,
+      "11110111011011": 1,
+      "11110111011110": 35,
+      "11110111011111": 1,
+      "11110111100000": 1
+    },
+    "recovered_period": 30,
+    "period_valid": true,
+    "x": 43,
+    "factors": [
+      7,
+      11
+    ],
+    "factorization_valid": true,
+    "verification": "7 × 11 = 77"
+  },
+  "transpiled_circuit_structural_audit": {
+    "E0_reference_L1_auto": {
+      "status": "ok",
+      "optimization_level": 1,
+      "depth": 1765950,
+      "total_ops": 2519962,
+      "two_qubit_ops": 602131,
+      "transpile_time_s": 4.219793,
+      "log10_fidelity_proxy_independent_errors": -444.63461024842945,
+      "num_qubits_output": 156,
+      "unique_physical_qubits_used": 21,
+      "physical_qubits_used": [
+        21,
+        36,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        56,
+        57,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        77,
+        85
+      ],
+      "final_layout": [
+        {
+          "logical_or_virtual_index": 0,
+          "physical": 45
+        },
+        {
+          "logical_or_virtual_index": 1,
+          "physical": 68
+        },
+        {
+          "logical_or_virtual_index": 2,
+          "physical": 64
+        },
+        {
+          "logical_or_virtual_index": 3,
+          "physical": 77
+        },
+        {
+          "logical_or_virtual_index": 4,
+          "physical": 65
+        },
+        {
+          "logical_or_virtual_index": 5,
+          "physical": 66
+        },
+        {
+          "logical_or_virtual_index": 6,
+          "physical": 67
+        },
+        {
+          "logical_or_virtual_index": 7,
+          "physical": 57
+        },
+        {
+          "logical_or_virtual_index": 8,
+          "physical": 47
+        },
+        {
+          "logical_or_virtual_index": 9,
+          "physical": 46
+        },
+        {
+          "logical_or_virtual_index": 10,
+          "physical": 44
+        },
+        {
+          "logical_or_virtual_index": 11,
+          "physical": 63
+        },
+        {
+          "logical_or_virtual_index": 12,
+          "physical": 43
+        },
+        {
+          "logical_or_virtual_index": 13,
+          "physical": 56
+        },
+        {
+          "logical_or_virtual_index": 14,
+          "physical": 41
+        },
+        {
+          "logical_or_virtual_index": 15,
+          "physical": 85
+        },
+        {
+          "logical_or_virtual_index": 16,
+          "physical": 62
+        },
+        {
+          "logical_or_virtual_index": 17,
+          "physical": 42
+        },
+        {
+          "logical_or_virtual_index": 18,
+          "physical": 40
+        },
+        {
+          "logical_or_virtual_index": 19,
+          "physical": 36
+        },
+        {
+          "logical_or_virtual_index": 20,
+          "physical": 21
+        }
+      ],
+      "native_gate_counts": {
+        "cz": 602131,
+        "measure": 14,
+        "rz": 738354,
+        "sx": 1179409,
+        "x": 54
+      },
+      "native_gate_set_supported_by_snapshot": true,
+      "unsupported_gate_names_vs_snapshot": [],
+      "explicit_swaps_after_translation": 0
+    },
+    "E3_L3_auto": {
+      "status": "ok",
+      "optimization_level": 3,
+      "depth": 1412349,
+      "total_ops": 2117589,
+      "two_qubit_ops": 531587,
+      "transpile_time_s": 11.186508,
+      "log10_fidelity_proxy_independent_errors": -426.29503177801695,
+      "num_qubits_output": 156,
+      "unique_physical_qubits_used": 24,
+      "physical_qubits_used": [
+        37,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        56,
+        57,
+        58,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71
+      ],
+      "final_layout": [
+        {
+          "logical_or_virtual_index": 0,
+          "physical": 44
+        },
+        {
+          "logical_or_virtual_index": 1,
+          "physical": 43
+        },
+        {
+          "logical_or_virtual_index": 2,
+          "physical": 56
+        },
+        {
+          "logical_or_virtual_index": 3,
+          "physical": 63
+        },
+        {
+          "logical_or_virtual_index": 4,
+          "physical": 64
+        },
+        {
+          "logical_or_virtual_index": 5,
+          "physical": 65
+        },
+        {
+          "logical_or_virtual_index": 6,
+          "physical": 66
+        },
+        {
+          "logical_or_virtual_index": 7,
+          "physical": 57
+        },
+        {
+          "logical_or_virtual_index": 8,
+          "physical": 67
+        },
+        {
+          "logical_or_virtual_index": 9,
+          "physical": 68
+        },
+        {
+          "logical_or_virtual_index": 10,
+          "physical": 48
+        },
+        {
+          "logical_or_virtual_index": 11,
+          "physical": 51
+        },
+        {
+          "logical_or_virtual_index": 12,
+          "physical": 49
+        },
+        {
+          "logical_or_virtual_index": 13,
+          "physical": 50
+        },
+        {
+          "logical_or_virtual_index": 14,
+          "physical": 46
+        },
+        {
+          "logical_or_virtual_index": 15,
+          "physical": 69
+        },
+        {
+          "logical_or_virtual_index": 16,
+          "physical": 47
+        },
+        {
+          "logical_or_virtual_index": 17,
+          "physical": 37
+        },
+        {
+          "logical_or_virtual_index": 18,
+          "physical": 45
+        },
+        {
+          "logical_or_virtual_index": 19,
+          "physical": 42
+        },
+        {
+          "logical_or_virtual_index": 20,
+          "physical": 41
+        }
+      ],
+      "native_gate_counts": {
+        "cz": 531587,
+        "measure": 14,
+        "rz": 511829,
+        "sx": 1063965,
+        "x": 10194
+      },
+      "native_gate_set_supported_by_snapshot": true,
+      "unsupported_gate_names_vs_snapshot": [],
+      "explicit_swaps_after_translation": 0
+    },
+    "reductions_E3_vs_E0_percent": {
+      "depth": 20.02327359211755,
+      "total_ops": 15.967423318288132,
+      "two_qubit_ops": 11.715722990512035
+    },
+    "log10_proxy_E3_minus_E0": 18.339578470412505
+  },
+  "aer_simulation_E0_E3": {
+    "status": "not_completed_manual_interrupt",
+    "details": "Aer iniciou a tentativa sobre E0 (156 fios físicos, 2.519.962 instruções), mas a execução foi interrompida manualmente com Ctrl+C antes da conclusão. A tentativa anterior também registrou a opção max_qubits inválida; essa opção foi retirada na versão seguinte. Nenhuma contagem Aer ideal/ruidosa de E0 ou E3 é reportada neste arquivo."
+  },
+  "interpretation": "A evidência ideal diz respeito ao circuito lógico original. As métricas de E0 e E3 são resultados reais de transpilação, e a auditoria estrutural confere os dados registrados no CSV e as portas frente ao snapshot. Isso não substitui uma simulação de distribuição de medições dos circuitos transpilados."
+}

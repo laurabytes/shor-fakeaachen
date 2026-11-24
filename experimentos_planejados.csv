@@ -1,0 +1,10 @@
+N,a,seed_transpiler,experiment_id,optimization_level,layout_method,routing_method,manual_layout,descricao
+77,30,42,E0_reference_L1_auto,1,auto,default,false,"Referência obrigatória; sem initial_layout manual"
+77,30,42,E1_L0_auto,0,auto,default,false,"Nível de otimização 0"
+77,30,42,E2_L2_auto,2,auto,default,false,"Nível de otimização 2"
+77,30,42,E3_L3_auto,3,auto,default,false,"Nível de otimização 3"
+77,30,42,E4_sabre_sabre,1,sabre,sabre,false,"Layout e roteamento SABRE"
+77,30,42,E5_dense_basic,1,dense,basic,false,"Layout DENSE e roteamento BASIC"
+77,30,42,E6_manual_low_error,1,auto,sabre,true,"Região conectada de menor custo de calibração"
+77,30,42,E7_manual_low_error_reversed,1,auto,sabre,true,"Mesmo subconjunto de E6 com mapeamento invertido"
+77,30,42,E8_manual_center,1,auto,sabre,true,"Região conectada iniciada no centro do índice físico"

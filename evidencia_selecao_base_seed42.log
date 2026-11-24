@@ -1,0 +1,13 @@
+Etapa 1 — Entrada e validação de N: N=77; executor solicitado: local.
+Etapa 2 — Pré-processamento clássico: Entrada composta, ímpar e sem potência perfeita; prosseguir.
+Etapa 3 — Escolha de a e cálculo de mdc(a, N): Tentativa 1/20: a=16; mdc(a,N)=1.
+Etapa 4 — Busca quântica de ordem: 21 qubits (14 de contagem + 7 alvo), 1024 shots; orçamento local 1214 MiB.
+Etapa 5 — Recuperação e validação do período: Ordem r=15; a^r mod N=1; período ímpar ou raiz trivial.
+Etapa 3 — Escolha de a e cálculo de mdc(a, N): Tentativa 2/20: a=30; mdc(a,N)=1.
+Etapa 4 — Busca quântica de ordem: 21 qubits (14 de contagem + 7 alvo), 1024 shots; orçamento local 1214 MiB.
+Etapa 5 — Recuperação e validação do período: Ordem r=30; a^r mod N=1; x=a^(r/2) mod N=43.
+Etapa 6 — Extração e verificação dos fatores: mdc(x−1,N)=7; mdc(x+1,N)=11; 7 × 11 = 77.
+Fatores encontrados: 7 × 11 = 77
+Método: simulação quântica ideal
+Período validado: 30; base: 30
+Resultado salvo em evidencia_selecao_base_seed42.json
