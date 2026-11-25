@@ -273,7 +273,7 @@ def factor(
     if seed is not None and (isinstance(seed, bool) or not isinstance(seed, int) or seed < 0):
         raise ValueError("seed deve ser um inteiro não negativo.")
 
-    budget = memory_budget_mb(max_memory_mb)
+    budget = memory_budget_mb(max_memory_mb) if mode == "local" else None
     steps = []
 
     def record(number, detail):
