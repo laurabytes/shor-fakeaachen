@@ -40,7 +40,7 @@ def hardware_info() -> dict[str, object]:
     }
 
 
-def check_resources(N: int, mode: str, budget_mb: int) -> None:
+def check_resources(N: int, mode: str, budget_mb: int | None) -> None:
     """Verifica o orçamento estimado antes de alocar o estado NumPy."""
     if mode != "local":
         return
