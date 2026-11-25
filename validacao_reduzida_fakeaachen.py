@@ -21,6 +21,7 @@ N = 77
 A = 30
 DEFAULT_SHOTS = 1024
 DEFAULT_SEED = 42
+EXPECTED_PERIOD = 30
 REQUIRED_IDS = ("E0_reference_L1_auto", "E3_L3_auto")
 
 
@@ -51,7 +52,7 @@ def parse_json_field(row: dict[str, str], key: str, default):
 
 def validate_period_and_factors(period: int | None) -> dict:
     if period is None:
-        return {"period_valid": False, "factorization_valid": False,
+        return {"recovered_period": None, "period_valid": False, "factorization_valid": False,
                 "reason": "Não foi possível recuperar o período a partir das contagens."}
     period_ok = (period > 0 and pow(A, period, N) == 1)
     if not period_ok:
@@ -123,8 +124,8 @@ def audit_mps_counts(csv_path: Path, recover_order) -> dict | None:
     shots_near_ideal_peak = 0
     for bitstring, count in counts.items():
         measured = int(bitstring.replace(" ", ""), 2)
-        peak_index = round(measured * 30 / phase_dimension)
-        nearest_peak = peak_index * phase_dimension / 30
+        peak_index = round(measured * EXPECTED_PERIOD / phase_dimension)
+        nearest_peak = peak_index * phase_dimension / EXPECTED_PERIOD
         if abs(measured - nearest_peak) <= 1:
             shots_near_ideal_peak += count
 
@@ -291,8 +292,8 @@ def main() -> int:
         md.extend([
             "As contagens abaixo foram lidas de CSVs existentes; esta rotina não inicia novas simulações Aer.",
             "",
-            "| Arquivo | Shots | Resultados distintos | Maior frequência | Período | Fatores | Próximos a pico r=30 (±1 bin) |",
-            "|---|---:|---:|---:|---:|---|---:|",
+            "| Arquivo | Shots | Resultados distintos | Maior frequência | Período | Fatores | Próximos a pico r=30 (±1 bin) | % |",
+            "|---|---:|---:|---:|---:|---|---:|---:|",
         ])
         for filename, audit in mps_audits.items():
             factors = audit.get("factors")
@@ -300,7 +301,8 @@ def main() -> int:
                 f"| {filename} | {audit['shots']} | {audit['distinct_outcomes']} | "
                 f"{audit['maximum_outcome_count']} | {audit.get('recovered_period')} | "
                 f"{factors if factors is not None else '—'} | "
-                f"{audit['shots_within_one_count_bin_of_nearest_r30_peak']} |"
+                f"{audit['shots_within_one_count_bin_of_nearest_r30_peak']} | "
+                f"{100 * audit['fraction_within_one_count_bin_of_nearest_r30_peak']:.2f}% |"
             )
         md.extend([
             "",
