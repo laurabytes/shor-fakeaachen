@@ -1,103 +1,119 @@
-# Otimização da transpilação do algoritmo de Shor — FakeAachen
+# shor no fakeaachen
 
-Estudo experimental de transpilação do circuito de busca de ordem de Shor para o backend simulado FakeAachen do Qiskit.
+estudo experimental de transpilação do circuito de busca de ordem do algoritmo de shor, usando o backend simulado **FakeAachen** do Qiskit.
 
-## Escopo
+o foco é comparar estratégias de otimização, layout e roteamento sem alterar a instância matemática nem a implementação lógica do circuito.
 
-A investigação mantém a mesma implementação lógica e a mesma instância em todos os experimentos:
+## objetivo
 
-- Módulo: N = 77.
-- Base: a = 30.
-- Registrador de contagem: 14 qubits.
-- Registrador de alvo: 7 qubits.
-- Total lógico: 21 qubits.
-- Seed do transpiler: 42.
+avaliar como diferentes configurações de transpilação afetam:
 
-O circuito lógico é construído em **shor_quantum.py**. O script **shor_otimizado.py** varia parâmetros de transpilação, layout e roteamento; não altera a instância matemática.
+- profundidade do circuito;
+- número total de operações;
+- operações de dois qubits (2Q);
+- mapeamento de qubits lógicos em qubits físicos;
+- tempo de transpilação;
+- proxy de fidelidade baseada nos erros disponíveis no target.
 
-## Estado dos experimentos
+## instância experimental
 
-A referência E0 e sete experimentos adicionais foram concluídos. E5 (DENSE/BASIC) foi mantido como pulado porque a execução anterior foi encerrada pelo sistema operacional antes de produzir métricas. Não há valores estimados para E5.
+| parâmetro | valor |
+|---|---:|
+| módulo | (N = 77) |
+| base | (a = 30) |
+| qubits de contagem | 14 |
+| qubits de alvo | 7 |
+| qubits lógicos | 21 |
+| seed do transpiler | 42 |
+| backend | FakeAachen |
 
-| ID | Configuração | Estado |
-|---|---|---|
-| E0 | Nível 1, layout automático, sem layout manual | Concluído |
-| E1 | Nível 0, layout automático | Concluído |
-| E2 | Nível 2, layout automático | Concluído |
-| E3 | Nível 3, layout automático | Concluído |
-| E4 | Layout SABRE e roteamento SABRE | Concluído |
-| E5 | Layout DENSE e roteamento BASIC | Pulado; sem métricas |
-| E6 | Layout manual em região conectada de menor custo estimado | Concluído |
-| E7 | Mesmo conjunto de qubits de E6, associação invertida | Concluído |
-| E8 | Layout manual em região BFS próxima ao centro dos índices físicos | Concluído |
+a referência **E0** utiliza `optimization_level=1` e não define `initial_layout` manual. todas as configurações mantêm (N=77) e (a=30).
 
-E3 apresentou o melhor resultado conjunto entre os experimentos concluídos nos indicadores estruturais e na proxy logarítmica:
+## resultado principal
 
-| Métrica | E0 — Referência | E3 — Nível 3 |
+entre os experimentos concluídos, **E3 (optimization_level=3, layout automático)** apresentou a melhor combinação dos indicadores estruturais avaliados.
+
+| métrica | E0 · referência | E3 · melhor resultado estrutural |
 |---|---:|---:|
-| Profundidade | 1.765.950 | 1.412.349 |
-| Operações totais | 2.519.962 | 2.117.589 |
-| Operações de dois qubits | 602.131 | 531.587 |
-| Qubits físicos ativos | 21 | 24 |
-| Tempo de transpilação | 4,22 s | 11,19 s |
+| profundidade | 1.765.950 | 1.412.349 |
+| operações totais | 2.519.962 | 2.117.589 |
+| operações 2Q | 602.131 | 531.587 |
+| qubits físicos ativos | 21 | 24 |
+| tempo de transpilação | 4,22 s | 11,19 s |
 | log10(proxy) | -444,635 | -426,295 |
 
-Em relação a E0, E3 reduziu a profundidade em 20,02%, as operações totais em 15,97% e as operações de dois qubits em 11,72%. O tempo de transpilação aumentou.
+em relação a E0, E3 reduziu a profundidade em **20,02%**, as operações totais em **15,97%** e as operações 2Q em **11,72%**. o tempo de transpilação, porém, aumentou.
 
-A proxy é calculada a partir dos erros de instrução disponíveis no target e supõe independência entre erros. O valor direto do produto pode sofrer underflow numérico; para comparação, use **log10_fidelity_proxy_independent_errors**, não interprete o campo **fidelity_proxy_independent_errors** igual a zero como uma probabilidade física nula.
+a proxy é uma aproximação multiplicativa baseada nos erros de instrução disponíveis no snapshot. ela supõe independência entre erros e não representa a probabilidade real de fatoração correta. use o campo `log10_fidelity_proxy_independent_errors` para comparação; o produto direto pode sofrer underflow.
 
-## Backend e calibração
+## experimentos
 
-O snapshot local do FakeAachen registra:
+| id | configuração | status |
+|---|---|---|
+| E0 | nível 1, layout automático | concluído · referência |
+| E1 | nível 0, layout automático | concluído |
+| E2 | nível 2, layout automático | concluído |
+| E3 | nível 3, layout automático | concluído |
+| E4 | layout SABRE e roteamento SABRE | concluído |
+| E5 | layout DENSE e roteamento BASIC | pulado · sem métricas |
+| E6 | layout manual em região conectada de menor custo estimado | concluído |
+| E7 | mesmo subconjunto de E6, associação invertida | concluído |
+| E8 | layout manual em região central | concluído |
 
-- 156 qubits físicos e 176 arestas de acoplamento não direcionadas.
-- Portas principais: rz, sx, x, cz e id.
-- Instruções adicionais no target: medição, reset, delay e controle condicional.
-- Erro mediano 1Q: 0,000159.
-- Erro mediano 2Q: 0,001535.
-- Erro mediano de leitura: 0,007385.
-- T1 mediano: aproximadamente 232,35 µs.
+E5 foi mantido no registro experimental, mas não produziu métricas porque a execução anterior foi encerrada pelo sistema operacional. nenhum valor foi estimado para esse caso.
+
+## caracterização do backend
+
+o snapshot local registra:
+
+- 156 qubits físicos e 176 conexões não direcionadas;
+- portas principais: `rz`, `sx`, `x`, `cz` e `id`;
+- erro mediano 1Q: 0,000159;
+- erro mediano 2Q: 0,001535;
+- erro mediano de leitura: 0,007385;
+- T1 mediano: aproximadamente 232,35 µs;
 - T2 mediano: aproximadamente 255,43 µs.
 
-Esses valores vêm do FakeProvider instalado localmente. São dados de snapshot, não calibração ao vivo nem execução em uma QPU física.
+esses valores pertencem ao snapshot do FakeProvider. não são calibração em tempo real nem execução em uma QPU física.
 
-## Validação: resultados e limites
+### topologia
 
-### Circuito lógico original
+![topologia do FakeAachen](resultados_fakeaachen/topologia_fakeaachen.png)
 
-A simulação ideal NumPy, com 1.024 shots e seed 42, recuperou o período 30 e os fatores 7 e 11. Essa execução valida o fluxo lógico de referência; não é uma execução Aer do circuito transpilado.
+### métricas de transpilação
 
-### Circuito transpilado E3
+![profundidade dos experimentos](resultados_fakeaachen/profundidade.png)
 
-Foi concluída uma simulação Aer compactada de E3 com método MPS, bond dimension máximo 16, truncamento de 1e-8 e 1.024 shots. A distribuição obtida teve 975 resultados distintos e frequência máxima 3. Como comparação, a amostra lógica ideal usada na auditoria teve 141 resultados distintos e frequência máxima 50. Apenas 6 dos 1.024 shots de E3 ficaram a até uma unidade dos centros de fase esperados para r=30, contra 921 na amostra lógica.
+![operações de dois qubits](resultados_fakeaachen/operacoes_2q.png)
 
-Embora o pós-processamento tenha retornado r=30 e os fatores 7 e 11 nessa execução, a distribuição MPS ficou muito mais dispersa. Portanto, esse resultado deve ser tratado como **aproximação exploratória inconclusiva**, e não como validação ideal conclusiva do circuito físico transpilado.
+os gráficos são gerados por `shor_otimizado.py`. E3 é destacado com rosa suave para facilitar a leitura, sem alterar os dados.
 
-### Simulação ruidosa
+## validação e limites
 
-A simulação ruidosa compactada de E3 com 8 shots produziu 8 resultados distintos e não recuperou período nem fatores. A amostra é pequena demais para estimar uma taxa de sucesso. A tentativa de 128 shots foi interrompida antes de terminar; não há resultado válido de 128 shots.
+- **circuito lógico:** a simulação ideal NumPy, com 1.024 shots e seed 42, recuperou o período (r=30) e os fatores 7 e 11. essa etapa valida o fluxo lógico de referência, não o circuito Aer transpilado.
+- **E3 com MPS:** a simulação compactada produziu 975 resultados distintos em 1.024 shots. apenas 6 shots ficaram a até uma unidade de contagem dos picos ideais esperados. apesar de o pós-processamento ter recuperado (r=30) e os fatores, a distribuição ficou muito dispersa; o resultado é exploratório e inconclusivo.
+- **E3 com ruído:** a amostra disponível contém apenas 8 shots, sem recuperação de período ou fatores. é insuficiente para estimar uma taxa de sucesso.
+- **comparação E0/E3:** a simulação Aer de E0 não foi concluída. não há comparação estatística equivalente entre os circuitos transpilados.
 
-O modelo ruidoso do script **validacao_aer_compacta_ruido.py** é simplificado: usa canais depolarizantes e erro de leitura simétrico derivados do snapshot. Não representa integralmente T1/T2, crosstalk, leakage, drift ou os custom noise passes do backend.
+o modelo ruidoso simplificado utiliza canais depolarizantes e erro simétrico de leitura derivados do snapshot. não representa integralmente T1/T2, crosstalk, leakage, drift ou os custom noise passes do backend.
 
-A simulação Aer de E0 não foi concluída. Assim, ainda não há comparação estatística ideal/ruidosa entre E0 e E3.
+## estrutura do projeto
 
-## Arquivos principais
+| arquivo | finalidade |
+|---|---|
+| `shor_original.py` | fluxo de fatoração e pós-processamento |
+| `shor_quantum.py` | circuito de busca de ordem e simulação lógica NumPy |
+| `shor_classical.py` | rotinas clássicas de apoio |
+| `shor_otimizado.py` | caracterização, transpilação, métricas e gráficos |
+| `shor_backends.py` | integração com os executores de simulação |
+| `shor_resources.py` | estimativas e verificações de recursos |
+| `validacao_reduzida_fakeaachen.py` | validação lógica e auditoria estrutural |
+| `validacao_aer_compacta_ruido.py` | simulação MPS compactada com modelo ruidoso simplificado |
+| `resultados_fakeaachen/resultados.csv` | métricas completas dos experimentos |
+| `resultados_fakeaachen/backend_snapshot.json` | resumo do snapshot do backend |
+| `relatorio_final.md` | relatório textual completo |
 
-- **shor_original.py**: fluxo principal de fatoração e pós-processamento.
-- **shor_quantum.py**: circuito de busca de ordem e simulação lógica NumPy.
-- **shor_classical.py**: rotinas clássicas de apoio, incluindo recuperação de ordem.
-- **shor_otimizado.py**: caracterização do backend, transpilação dos experimentos, métricas e gráficos.
-- **validacao_reduzida_fakeaachen.py**: validação lógica, auditoria estrutural E0/E3 e leitura das contagens MPS E3 já salvas. Não inicia uma nova simulação Aer.
-- **validacao_aer_compacta_ruido.py**: validação compactada MPS com modelo ruidoso simplificado.
-- **resultados_fakeaachen/resultados.csv**: métricas completas dos experimentos.
-- **resultados_fakeaachen/backend_snapshot.json**, **calibracao_qubits.csv** e **calibracao_arestas.csv**: caracterização do snapshot.
-- **resultados_fakeaachen/validacao_compacta/**: contagens compactadas mantidas como evidência.
-
-O arquivo **validacao_aer_compacta.py** é mantido como ponto de entrada compatível e encaminha para a implementação única em **validacao_aer_compacta_ruido.py**. Isso evita manter duas versões quase idênticas da compactação. No modo noisy, a implementação usa um modelo simplificado derivado do snapshot; a tentativa anterior de remapear diretamente o NoiseModel gerado por from_backend encontrou custom noise passes que não podiam ser reindexados automaticamente.
-
-## Ambiente registrado
-
-As versões usadas na execução estão em **resultados_fakeaachen/versions.json**:
+## ambiente registrado
 
 - Python 3.12.0
 - Qiskit 2.6.2
@@ -107,37 +123,37 @@ As versões usadas na execução estão em **resultados_fakeaachen/versions.json
 - Matplotlib 3.11.2
 - NetworkX 3.7
 
-## Instalação
+as versões exatas estão em `resultados_fakeaachen/versions.json`. as faixas de dependências estão em `requirements.txt`.
 
-Em macOS com Python 3.12:
+## reprodução
 
-~~~bash
+criar e ativar o ambiente:
+
+```bash
 python3.12 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
-~~~
+```
 
-As faixas de versão em **requirements.txt** permitem instalar versões compatíveis dentro dos limites definidos. Para reproduzir exatamente a execução registrada, consulte também **versions.json**.
+executar os experimentos, mantendo E5 como pulado:
 
-## Reexecução
-
-Para repetir a transpilação desde o início, preservando E5 como pulado:
-
-~~~bash
+```bash
 python shor_otimizado.py --skip-experiment E5_dense_basic
-~~~
+```
 
-Para retomar a partir das linhas status=ok já gravadas:
+retomar a partir das linhas `status=ok` já gravadas:
 
-~~~bash
+```bash
 python shor_otimizado.py --skip-experiment E5_dense_basic --resume
-~~~
+```
 
-Para regenerar a validação lógica e a auditoria estrutural:
+regerar a validação lógica e a auditoria estrutural:
 
-~~~bash
+```bash
 python validacao_reduzida_fakeaachen.py --shots 1024 --seed 42
-~~~
+```
 
-O argumento `--max-memory-mb` limita somente a estimativa de memória da simulação NumPy local; não configura um limite de memória do Aer. As simulações Aer compactadas são opcionais e podem consumir bastante tempo e memória. Os resultados MPS devem sempre ser apresentados junto dos parâmetros de bond dimension e truncamento, e não como resultados exatos.
+## limitações do estudo
+
+os resultados se limitam ao snapshot FakeAachen, às versões registradas, à seed 42 e à instância (N=77, a=30). o circuito é uma demonstração didática de busca de ordem e não permite inferir a viabilidade de fatoração de chaves criptográficas reais. profundidade, contagem de portas e proxy de erros são indicadores estruturais; não substituem uma estimativa estatística de sucesso em hardware.
