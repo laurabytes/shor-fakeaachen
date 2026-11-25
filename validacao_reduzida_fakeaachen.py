@@ -15,8 +15,6 @@ from __future__ import annotations
 import argparse
 import csv
 import json
-import math
-import sys
 from pathlib import Path
 from math import gcd
 
@@ -225,20 +223,21 @@ def main() -> int:
         "logical_original_ideal": logical_result,
         "transpiled_circuit_structural_audit": comparison,
         "aer_simulation_E0_E3": {
-            "status": "not_completed_manual_interrupt",
+            "status": "E0_not_completed_E3_compacted_MPS_exploratory",
             "details": (
-                "Aer iniciou a tentativa sobre E0 (156 fios físicos, 2.519.962 instruções), "
-                "mas a execução foi interrompida manualmente com Ctrl+C antes da conclusão. "
-                "A tentativa anterior também registrou a opção max_qubits inválida; essa opção "
-                "foi retirada na versão seguinte. Nenhuma contagem Aer ideal/ruidosa de E0 ou E3 "
-                "é reportada neste arquivo."
+                "A tentativa Aer full-width de E0 (156 fios físicos, 2.519.962 instruções) "
+                "foi interrompida manualmente antes de produzir contagens. Para E3 existem "
+                "execuções compactadas MPS separadas, com bond dimension máximo 16 e truncamento "
+                "de 1e-8, auditadas em transpiled_E3_mps_count_audits. Essa aproximação apresentou "
+                "distribuição muito mais dispersa que a amostra lógica ideal e não deve ser tratada "
+                "como validação conclusiva. O resultado ruidoso de 8 shots é somente exploratório."
             ),
         },
         "interpretation": (
-            "A evidência ideal diz respeito ao circuito lógico original. As métricas de E0 e E3 "
-            "são resultados reais de transpilação, e a auditoria estrutural confere os dados "
-            "registrados no CSV e as portas frente ao snapshot. Isso não substitui uma simulação "
-            "de distribuição de medições dos circuitos transpilados."
+            "A simulação NumPy valida o fluxo ideal do circuito lógico original. As métricas "
+            "E0/E3 são resultados reais de transpilação. A execução compactada MPS de E3 é "
+            "aproximada e inconclusiva quanto à preservação da distribuição; a execução ruidosa "
+            "disponível tem somente 8 shots. A tentativa Aer full-width de E0 foi interrompida."
         ),
     }
 
@@ -289,7 +288,7 @@ def main() -> int:
         f"A diferença de log10(proxy), E3 − E0, é {comparison['log10_proxy_E3_minus_E0']:.3f}; valor positivo favorece E3 nessa proxy aproximada.",
         "",
         "## 3. Auditoria das contagens MPS já existentes", "",
-    ];
+    ]
     if mps_audits:
         md.extend([
             "As contagens abaixo foram lidas de CSVs existentes; esta rotina não inicia novas simulações Aer.",
@@ -325,7 +324,6 @@ def main() -> int:
         "",
         "Arquivos: `validacao_reduzida.json` e `validacao_logica_counts.csv`.",
     ])
-    ]
     md_path = outdir / "validacao_reduzida.md"
     md_path.write_text("\n".join(md) + "\n", encoding="utf-8")
 
