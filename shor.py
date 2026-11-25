@@ -7,15 +7,15 @@ veja readme.md para os limites desta implementação didática.
 from __future__ import annotations
 
 import argparse
-from dataclasses import asdict, dataclass, field
-from fractions import Fraction
-from math import gcd
 import json
 import logging
 import os
-from pathlib import Path
 import random
 import sys
+from dataclasses import asdict, dataclass, field
+from fractions import Fraction
+from math import gcd
+from pathlib import Path
 
 from resources import check_resources, hardware_info, memory_budget_mb
 
