@@ -22,7 +22,6 @@ import csv
 import gc
 import json
 import math
-import sys
 import time
 from pathlib import Path
 from typing import Any
