@@ -321,6 +321,11 @@ def _collect_circuit_metrics(compiled, logical_circuit, backend):
                 two_error_n += 1
 
     fidelity_proxy = math.exp(log_survival_sum) if n_errors else None
+    # O produto pode sofrer underflow após milhões de instruções. Nesse caso,
+    # o log continua sendo a métrica comparável; não grave zero como se fosse
+    # uma estimativa física exata.
+    if fidelity_proxy == 0.0:
+        fidelity_proxy = None
     initial_map, final_map = _layout_maps(compiled, logical_circuit)
     return {
         "depth": compiled.depth(),
