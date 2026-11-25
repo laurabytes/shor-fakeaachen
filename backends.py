@@ -1,4 +1,5 @@
 """executores aer e fakeprovider usados pela demonstração de shor."""
+
 from __future__ import annotations
 
 
@@ -8,7 +9,9 @@ def _fake_backend(num_qubits: int, backend_name: str | None = None):
 
     accepted_names = {"fakeaachen", "fake_aachen", "ibm_aachen", "aachen"}
     if backend_name and backend_name.lower() not in accepted_names:
-        raise ValueError("Esta avaliação está configurada exclusivamente para FakeAachen.")
+        raise ValueError(
+            "Esta avaliação está configurada exclusivamente para FakeAachen."
+        )
 
     backend = FakeAachen()
     if backend.num_qubits < num_qubits:
@@ -44,10 +47,7 @@ def run_aer(circuit, shots: int = 1024, seed: int | None = None, progress=None):
         seed_transpiler=seed,
     )
     if progress:
-        progress(
-            f"Aer: profundidade {compiled.depth()}, "
-            f"{compiled.size()} operações."
-        )
+        progress(f"Aer: profundidade {compiled.depth()}, {compiled.size()} operações.")
 
     result = simulator.run(
         compiled,

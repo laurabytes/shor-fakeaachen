@@ -240,7 +240,10 @@ def build_order_finding_circuit(
         "modular_synthesis": synthesis,
         "stages": ["preparacao", "exponenciacao_modular", "qft_inversa", "medicao"],
         "etapa_4_subpassos": [
-            "preparacao", "exponenciacao_modular", "qft_inversa", "medicao"
+            "preparacao",
+            "exponenciacao_modular",
+            "qft_inversa",
+            "medicao",
         ],
     }
     return circuit

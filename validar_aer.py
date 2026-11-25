@@ -15,6 +15,7 @@ uso recomendado no mac:
 
 cada execução salva seu json/csv separadamente. não altera resultados.csv.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -40,6 +41,7 @@ def load_result_rows(csv_path: Path) -> dict[str, dict[str, str]]:
 
 def count_summary(counts: dict[str, int]) -> dict[str, Any]:
     from classical import recover_order
+
     total = sum(int(v) for v in counts.values())
     period = recover_order(counts, N, A, 2 * (N - 1).bit_length())
     period_valid = bool(period and pow(A, period, N) == 1)
@@ -49,10 +51,15 @@ def count_summary(counts: dict[str, int]) -> dict[str, Any]:
         x = pow(A, period // 2, N)
         if x not in (1, N - 1):
             from math import gcd
+
             f1, f2 = sorted((gcd(x - 1, N), gcd(x + 1, N)))
             if 1 < f1 < N and 1 < f2 < N and f1 * f2 == N:
                 factors = [f1, f2]
-    top = sorted(((str(k), int(v)) for k, v in counts.items()), key=lambda kv: kv[1], reverse=True)[:20]
+    top = sorted(
+        ((str(k), int(v)) for k, v in counts.items()),
+        key=lambda kv: kv[1],
+        reverse=True,
+    )[:20]
     return {
         "shots": total,
         "distinct_outcomes": len(counts),
@@ -95,7 +102,10 @@ def prepare_compact_dag(circuit):
     if idle_qubits:
         dag.remove_qubits(*idle_qubits)
 
-    physical_to_compact = {physical: compact_index for compact_index, physical in enumerate(active_physical)}
+    physical_to_compact = {
+        physical: compact_index
+        for compact_index, physical in enumerate(active_physical)
+    }
     meta = {
         "original_width": original_width,
         "compact_width": len(active_physical),
@@ -125,7 +135,9 @@ def remap_backend_noise(backend, physical_to_compact):
 
     props = backend.properties()
     if props is None:
-        raise RuntimeError("FakeAachen não disponibilizou BackendProperties para construir o modelo de ruído.")
+        raise RuntimeError(
+            "FakeAachen não disponibilizou BackendProperties para construir o modelo de ruído."
+        )
 
     basis = ["id", "rz", "sx", "x", "cz"]
     target = NoiseModel(basis_gates=basis)
@@ -172,8 +184,13 @@ def remap_backend_noise(backend, physical_to_compact):
         if instruction == "cz" and len(physical_tuple) == 2:
             reverse_key = (instruction, tuple(reversed(physical_tuple)))
             if reverse_key not in gate_error_table:
-                reverse_compact = [physical_to_compact[physical_tuple[1]], physical_to_compact[physical_tuple[0]]]
-                target.add_quantum_error(error, [instruction], reverse_compact, warnings=False)
+                reverse_compact = [
+                    physical_to_compact[physical_tuple[1]],
+                    physical_to_compact[physical_tuple[0]],
+                ]
+                target.add_quantum_error(
+                    error, [instruction], reverse_compact, warnings=False
+                )
                 copied_gate_errors += 1
 
     # modelo simétrico de leitura por qubit, parametrizado pelo erro médio do snapshot.
@@ -192,15 +209,22 @@ def remap_backend_noise(backend, physical_to_compact):
         probability = min(max(probability, 0.0), 0.5)
         readout_table[int(physical)] = probability
         if probability > 0:
-            readout = ReadoutError([[1.0 - probability, probability],
-                                    [probability, 1.0 - probability]])
-            target.add_readout_error(readout, [physical_to_compact[int(physical)]], warnings=False)
+            readout = ReadoutError(
+                [[1.0 - probability, probability], [probability, 1.0 - probability]]
+            )
+            target.add_readout_error(
+                readout, [physical_to_compact[int(physical)]], warnings=False
+            )
             copied_readout_errors += 1
 
     if copied_gate_errors == 0:
-        raise RuntimeError("Nenhuma taxa de erro de porta nativa foi encontrada para os qubits ativos.")
+        raise RuntimeError(
+            "Nenhuma taxa de erro de porta nativa foi encontrada para os qubits ativos."
+        )
     if copied_readout_errors == 0:
-        raise RuntimeError("Nenhuma taxa de erro de leitura foi encontrada para os qubits ativos.")
+        raise RuntimeError(
+            "Nenhuma taxa de erro de leitura foi encontrada para os qubits ativos."
+        )
 
     return target, {
         "source_noise_model": "modelo simplificado construído diretamente de BackendProperties do FakeAachen",
@@ -211,7 +235,9 @@ def remap_backend_noise(backend, physical_to_compact):
         "basis_gates": list(target.basis_gates),
         "noise_instructions": sorted(target.noise_instructions),
         "noise_qubits": sorted(target.noise_qubits),
-        "readout_error_values_by_physical_qubit": {str(k): v for k, v in readout_table.items()},
+        "readout_error_values_by_physical_qubit": {
+            str(k): v for k, v in readout_table.items()
+        },
         "limitations": [
             "não inclui relaxação T1/T2",
             "não inclui crosstalk, drift ou leakage",
@@ -280,7 +306,9 @@ def run_aer(compact, mode: str, backend, physical_to_compact, args):
         "simulator": "AerSimulator(method=matrix_product_state)",
         "mps_max_bond_dimension": args.bond_dimension,
         "mps_truncation_threshold": args.truncation_threshold,
-        "approximate_mps": bool(args.bond_dimension > 0 or args.truncation_threshold > 1e-16),
+        "approximate_mps": bool(
+            args.bond_dimension > 0 or args.truncation_threshold > 1e-16
+        ),
         "noise_model": noise_meta,
         "measurement_summary": summary,
         "counts": {str(k): int(v) for k, v in counts.items()},
@@ -294,32 +322,51 @@ def main():
     p.add_argument("--mode", choices=["ideal", "noisy"], default="ideal")
     p.add_argument("--shots", type=int, default=8)
     p.add_argument("--seed", type=int, default=42)
-    p.add_argument("--bond-dimension", type=int, default=16,
-                   help="limite de bond dimension MPS; 16 é uma aproximação deliberada para reduzir recursos")
+    p.add_argument(
+        "--bond-dimension",
+        type=int,
+        default=16,
+        help="limite de bond dimension MPS; 16 é uma aproximação deliberada para reduzir recursos",
+    )
     p.add_argument("--truncation-threshold", type=float, default=1e-8)
     p.add_argument("--output", type=Path, default=None)
     args = p.parse_args()
-    if args.shots < 1 or args.seed < 0 or args.bond_dimension < 0 or not (0 <= args.truncation_threshold < 1):
-        p.error("shots deve ser >=1, seed >=0, bond-dimension >=0 e threshold entre 0 e 1.")
+    if (
+        args.shots < 1
+        or args.seed < 0
+        or args.bond_dimension < 0
+        or not (0 <= args.truncation_threshold < 1)
+    ):
+        p.error(
+            "shots deve ser >=1, seed >=0, bond-dimension >=0 e threshold entre 0 e 1."
+        )
 
     project = Path(__file__).resolve().parent
     output = args.output or project / "resultados" / "validacao_compacta"
     output.mkdir(parents=True, exist_ok=True)
 
-    print("Carregando FakeAachen e montando somente a configuração solicitada...", flush=True)
+    print(
+        "Carregando FakeAachen e montando somente a configuração solicitada...",
+        flush=True,
+    )
     from qiskit_ibm_runtime.fake_provider import FakeAachen
+
     backend = FakeAachen()
     logical, compiled = make_compiled(backend, args.config)
     print(
         f"{args.config}: transpilado com {compiled.num_qubits} fios e {compiled.size()} instruções; "
-        f"circuito lógico: {logical.num_qubits} qubits.", flush=True
+        f"circuito lógico: {logical.num_qubits} qubits.",
+        flush=True,
     )
 
-    dag, active_physical, physical_to_compact, compaction_meta = prepare_compact_dag(compiled)
+    dag, active_physical, physical_to_compact, compaction_meta = prepare_compact_dag(
+        compiled
+    )
     # libera o circuito full-width antes de materializar a versão compacta.
     del compiled
     gc.collect()
     from qiskit.converters import dag_to_circuit
+
     compact = dag_to_circuit(dag, copy_operations=False)
     del dag
     gc.collect()
@@ -332,12 +379,15 @@ def main():
         )
     print(
         f"Compactação: {compaction_meta['original_width']} -> {compaction_meta['compact_width']} qubits; "
-        f"instruções={compaction_meta['compact_size']}; qubits físicos ativos={active_physical}.", flush=True
+        f"instruções={compaction_meta['compact_size']}; qubits físicos ativos={active_physical}.",
+        flush=True,
     )
 
     csv_rows = load_result_rows(project / "resultados" / "resultados.csv")
     expected_id = "E0_reference_L1_auto" if args.config == "E0" else "E3_L3_auto"
-    recorded_active = json.loads(csv_rows[expected_id].get("physical_qubits_used_json") or "[]")
+    recorded_active = json.loads(
+        csv_rows[expected_id].get("physical_qubits_used_json") or "[]"
+    )
     if recorded_active and sorted(recorded_active) != active_physical:
         raise RuntimeError(
             "Os qubits físicos ativos desta recompilação não coincidem com o CSV. "
@@ -348,11 +398,15 @@ def main():
     output_qpy = output / f"{args.config}_compactado.qpy"
     try:
         from qiskit import qpy
+
         with output_qpy.open("wb") as f:
             qpy.dump(compact, f)
         print(f"Circuito compacto salvo: {output_qpy}", flush=True)
     except Exception as exc:
-        print(f"Aviso: não foi possível salvar QPY compacto: {type(exc).__name__}: {exc}", flush=True)
+        print(
+            f"Aviso: não foi possível salvar QPY compacto: {type(exc).__name__}: {exc}",
+            flush=True,
+        )
 
     result_payload = {
         "config": args.config,
@@ -361,7 +415,9 @@ def main():
         "a": A,
         "seed_transpiler": SEED,
         "compaction": compaction_meta,
-        "matches_recorded_physical_qubits": (not recorded_active or sorted(recorded_active) == active_physical),
+        "matches_recorded_physical_qubits": (
+            not recorded_active or sorted(recorded_active) == active_physical
+        ),
         "method_note": (
             "Circuito transpilado preservado, exceto remoção de barreiras e fios físicos sem instruções. "
             "A simulação MPS usa truncamento configurável; resultados devem ser rotulados como aproximados. "
@@ -379,8 +435,14 @@ def main():
         "mps_max_bond_dimension": args.bond_dimension,
         "mps_truncation_threshold": args.truncation_threshold,
     }
-    json_path.write_text(json.dumps(result_payload, indent=2, ensure_ascii=False, default=str), encoding="utf-8")
-    print(f"Iniciando Aer ({args.mode}) com shots={args.shots}, bond_dimension={args.bond_dimension}, threshold={args.truncation_threshold}...", flush=True)
+    json_path.write_text(
+        json.dumps(result_payload, indent=2, ensure_ascii=False, default=str),
+        encoding="utf-8",
+    )
+    print(
+        f"Iniciando Aer ({args.mode}) com shots={args.shots}, bond_dimension={args.bond_dimension}, threshold={args.truncation_threshold}...",
+        flush=True,
+    )
     try:
         run_result = run_aer(compact, args.mode, backend, physical_to_compact, args)
         result_payload["aer_runs"][args.mode] = run_result
@@ -392,7 +454,10 @@ def main():
             "mps_max_bond_dimension": args.bond_dimension,
             "mps_truncation_threshold": args.truncation_threshold,
         }
-        json_path.write_text(json.dumps(result_payload, indent=2, ensure_ascii=False, default=str), encoding="utf-8")
+        json_path.write_text(
+            json.dumps(result_payload, indent=2, ensure_ascii=False, default=str),
+            encoding="utf-8",
+        )
         print(f"Interrupção registrada em: {json_path}", flush=True)
         return 130
     except Exception as exc:
@@ -401,18 +466,32 @@ def main():
             "error": f"{type(exc).__name__}: {exc}",
             "shots_requested": args.shots,
         }
-        json_path.write_text(json.dumps(result_payload, indent=2, ensure_ascii=False, default=str), encoding="utf-8")
-        print(f"Simulação falhou; erro registrado em {json_path}: {type(exc).__name__}: {exc}", flush=True)
+        json_path.write_text(
+            json.dumps(result_payload, indent=2, ensure_ascii=False, default=str),
+            encoding="utf-8",
+        )
+        print(
+            f"Simulação falhou; erro registrado em {json_path}: {type(exc).__name__}: {exc}",
+            flush=True,
+        )
         return 1
 
-    json_path.write_text(json.dumps(result_payload, indent=2, ensure_ascii=False, default=str), encoding="utf-8")
+    json_path.write_text(
+        json.dumps(result_payload, indent=2, ensure_ascii=False, default=str),
+        encoding="utf-8",
+    )
     with counts_path.open("w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         writer.writerow(["bitstring", "count"])
-        for bitstring, count in sorted(run_result["counts"].items(), key=lambda kv: (-kv[1], kv[0])):
+        for bitstring, count in sorted(
+            run_result["counts"].items(), key=lambda kv: (-kv[1], kv[0])
+        ):
             writer.writerow([bitstring, count])
-    print(f"Concluído: período={run_result['measurement_summary']['recovered_period']}; "
-          f"fatores={run_result['measurement_summary']['recovered_factors']}.", flush=True)
+    print(
+        f"Concluído: período={run_result['measurement_summary']['recovered_period']}; "
+        f"fatores={run_result['measurement_summary']['recovered_factors']}.",
+        flush=True,
+    )
     print(f"JSON: {json_path}", flush=True)
     print(f"Contagens: {counts_path}", flush=True)
     del compact, logical

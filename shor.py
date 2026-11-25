@@ -31,8 +31,31 @@ ETAPAS = {
 }
 
 SMALL_PRIMES = (
-    2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47,
-    53, 59, 61, 67, 71, 73, 79, 83, 89, 97,
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    19,
+    23,
+    29,
+    31,
+    37,
+    41,
+    43,
+    47,
+    53,
+    59,
+    61,
+    67,
+    71,
+    73,
+    79,
+    83,
+    89,
+    97,
 )
 
 
@@ -67,11 +90,14 @@ def etapa2_preprocessamento(N: int, *, quantum: bool = False):
     acima de 64 bits, a rejeição de primos usa miller–rabin probabilístico.
     """
     from classical import is_prime, perfect_power_factors
+
     found, factors = etapa_2_verificacao_preliminar(N, () if quantum else SMALL_PRIMES)
     if found:
         return factors, "divisão clássica"
     if is_prime(N):
-        qualification = "é primo" if N < 2**64 else "é provavelmente primo (Miller–Rabin)"
+        qualification = (
+            "é primo" if N < 2**64 else "é provavelmente primo (Miller–Rabin)"
+        )
         raise ValueError(f"{N} {qualification}; não prosseguindo com a fatoração.")
     factors = perfect_power_factors(N)
     return (factors, "potência perfeita (clássico)") if factors else (None, None)
@@ -113,7 +139,11 @@ def retrieve_denominator(measured_decimal, num_counting_qubits, N):
         raise ValueError("O número de bits de contagem deve ser positivo.")
     if not 0 <= measured_decimal < 2**num_counting_qubits:
         raise ValueError("A medição não cabe no registrador de contagem.")
-    return Fraction(measured_decimal, 2**num_counting_qubits).limit_denominator(N).denominator
+    return (
+        Fraction(measured_decimal, 2**num_counting_qubits)
+        .limit_denominator(N)
+        .denominator
+    )
 
 
 def etapa5(x, N):
@@ -129,6 +159,7 @@ def etapa6(x, N):
 def factors_from_measurements(counts, N, a, num_counting_qubits):
     """etapas 5 e 6; mantém a interface pública anterior."""
     from classical import recover_order
+
     r = recover_order(counts, N, a, num_counting_qubits)
     x = etapa5_validar_periodo(N, a, r)
     factors = etapa6_extrair_fatores(N, x) if x is not None else None
@@ -138,6 +169,7 @@ def factors_from_measurements(counts, N, a, num_counting_qubits):
 def _small_perfect_power(N):
     """compatibilidade: agora usa raízes inteiras, sem varrer bases até sqrt(n)."""
     from classical import perfect_power_factors
+
     return perfect_power_factors(N)
 
 
@@ -195,7 +227,9 @@ def _ibm_backend(num_qubits, backend_name=None, instance=None):
         backend = service.backend(backend_name)
     else:
         backend = service.least_busy(
-            operational=True, simulator=False, min_num_qubits=num_qubits,
+            operational=True,
+            simulator=False,
+            min_num_qubits=num_qubits,
         )
     if backend.num_qubits < num_qubits:
         raise ValueError(f"O backend precisa ter pelo menos {num_qubits} qubits.")
@@ -211,7 +245,9 @@ def _run_ibm(N, a, shots, backend, seed, progress, *, circuit=None):
         circuit = build_order_finding_circuit(N, a)
     compiled = transpile(circuit, backend, optimization_level=1, seed_transpiler=seed)
     if progress:
-        progress(f"Circuito transpilado: profundidade {compiled.depth()}, {compiled.size()} operações.")
+        progress(
+            f"Circuito transpilado: profundidade {compiled.depth()}, {compiled.size()} operações."
+        )
     job = SamplerV2(mode=backend).run([compiled], shots=shots)
     if progress:
         progress(f"Job IBM: {job.job_id()}")
@@ -219,8 +255,18 @@ def _run_ibm(N, a, shots, backend, seed, progress, *, circuit=None):
 
 
 def etapa4_busca_quantica_de_ordem(
-    N, a, *, mode, shots, seed, max_memory_mb, progress=None,
-    circuit=None, backend=None, backend_name=None, fake_noise=True,
+    N,
+    a,
+    *,
+    mode,
+    shots,
+    seed,
+    max_memory_mb,
+    progress=None,
+    circuit=None,
+    backend=None,
+    backend_name=None,
+    fake_noise=True,
 ):
     """etapa 4: executa preparação, u modular controlada, qft⁻¹ e medição.
 
@@ -229,12 +275,15 @@ def etapa4_busca_quantica_de_ordem(
     """
     if mode == "local":
         from quantum import simulate_order_finding
+
         return simulate_order_finding(N, a, shots=shots, seed=seed)
     if mode == "aer":
         from backends import run_aer
+
         return run_aer(circuit, shots=shots, seed=seed, progress=progress)
     if mode == "fake":
         from backends import run_fake
+
         return run_fake(
             circuit,
             shots=shots,
@@ -247,9 +296,21 @@ def etapa4_busca_quantica_de_ordem(
 
 
 def factor(
-    N=77, *, mode="local", shots=1024, max_attempts=20, seed=None,
-    quantum=False, base=None, backend_name=None, instance=None, progress=None,
-    max_memory_mb=None, fake_noise=True, show_circuit=False, synthesis="auto",
+    N=77,
+    *,
+    mode="local",
+    shots=1024,
+    max_attempts=20,
+    seed=None,
+    quantum=False,
+    base=None,
+    backend_name=None,
+    instance=None,
+    progress=None,
+    max_memory_mb=None,
+    fake_noise=True,
+    show_circuit=False,
+    synthesis="auto",
 ):
     """encontra um par de fatores próprios, ou informa a impossibilidade/falha.
 
@@ -266,11 +327,19 @@ def factor(
         raise ValueError("fake_noise deve ser um booleano.")
     if isinstance(shots, bool) or not isinstance(shots, int) or shots < 1:
         raise ValueError("shots deve ser um inteiro positivo.")
-    if isinstance(max_attempts, bool) or not isinstance(max_attempts, int) or max_attempts < 1:
+    if (
+        isinstance(max_attempts, bool)
+        or not isinstance(max_attempts, int)
+        or max_attempts < 1
+    ):
         raise ValueError("max_attempts deve ser um inteiro positivo.")
-    if base is not None and (isinstance(base, bool) or not isinstance(base, int) or not 1 < base < N):
+    if base is not None and (
+        isinstance(base, bool) or not isinstance(base, int) or not 1 < base < N
+    ):
         raise ValueError("A base deve ser um inteiro com 1 < a < N.")
-    if seed is not None and (isinstance(seed, bool) or not isinstance(seed, int) or seed < 0):
+    if seed is not None and (
+        isinstance(seed, bool) or not isinstance(seed, int) or seed < 0
+    ):
         raise ValueError("seed deve ser um inteiro não negativo.")
 
     budget = memory_budget_mb(max_memory_mb) if mode == "local" else None
@@ -296,16 +365,23 @@ def factor(
         record(3, f"Tentativa {attempt}/{max_attempts}: a={a}; mdc(a,N)={divisor}.")
         if divisor > 1:
             return FactorizationResult(
-                N, tuple(sorted((divisor, N // divisor))), "mdc clássico", attempt, a, steps=steps,
+                N,
+                tuple(sorted((divisor, N // divisor))),
+                "mdc clássico",
+                attempt,
+                a,
+                steps=steps,
             )
         if a == N - 1:
             if base is not None:
-                raise ValueError("A base a=N−1 sempre produz raiz trivial; escolha outra base.")
+                raise ValueError(
+                    "A base a=N−1 sempre produz raiz trivial; escolha outra base."
+                )
             record(3, "Base a=N−1 descartada antes da execução quântica.")
             continue
         check_resources(N, mode, budget)
         resource_detail = (
-            f"{3*n} qubits ({2*n} de contagem + {n} alvo), {shots} shots"
+            f"{3 * n} qubits ({2 * n} de contagem + {n} alvo), {shots} shots"
         )
         if mode == "local":
             resource_detail += f"; orçamento de memória local {budget} MiB"
@@ -315,36 +391,52 @@ def factor(
         qiskit_errors = ()
         if mode != "local" or show_circuit:
             from qiskit.exceptions import QiskitError
+
             qiskit_errors = (QiskitError,)
         try:
             if mode == "ibm" and backend is None:
-                backend = _ibm_backend(3*n, backend_name, instance)
+                backend = _ibm_backend(3 * n, backend_name, instance)
                 if progress:
                     progress(f"Backend selecionado: {backend.name}")
             circuit = None
             if mode != "local" or show_circuit:
                 from quantum import build_order_finding_circuit
+
                 selected_synthesis = synthesis
                 # o aer aplica matrizes unitárias nativamente; evitar milhares
                 # de mcx para módulos gerais torna n=77 viável em cpu.
                 # a família com rotação de bits já possui circuitos curtos.
-                if (mode == "aer" and synthesis == "auto"
-                        and not (N == (1 << n) - 1 and a & (a - 1) == 0)):
+                if (
+                    mode == "aer"
+                    and synthesis == "auto"
+                    and not (N == (1 << n) - 1 and a & (a - 1) == 0)
+                ):
                     selected_synthesis = "dense"
-                circuit = build_order_finding_circuit(N, a, synthesis=selected_synthesis)
+                circuit = build_order_finding_circuit(
+                    N, a, synthesis=selected_synthesis
+                )
                 if progress and show_circuit:
                     progress("Circuito quântico (antes da transpilação):")
                     progress(str(circuit.draw(output="text", fold=120)))
             counts = etapa4_busca_quantica_de_ordem(
-                N, a, mode=mode, shots=shots, seed=sample_seed, max_memory_mb=budget,
-                progress=progress, circuit=circuit, backend=backend,
-                backend_name=backend_name, fake_noise=fake_noise,
+                N,
+                a,
+                mode=mode,
+                shots=shots,
+                seed=sample_seed,
+                max_memory_mb=budget,
+                progress=progress,
+                circuit=circuit,
+                backend=backend,
+                backend_name=backend_name,
+                fake_noise=fake_noise,
             )
         except qiskit_errors as exc:
             executor = "IBM" if mode == "ibm" else mode
             raise RuntimeError(f"Falha na execução {executor}: {exc}") from exc
         from classical import recover_order
-        period = recover_order(counts, N, a, 2*n)
+
+        period = recover_order(counts, N, a, 2 * n)
         if period is None:
             record(5, "Medições insuficientes para validar uma ordem.")
             if base is not None:
@@ -355,23 +447,39 @@ def factor(
             record(5, "Uma nova base será sorteada.")
             continue
         x = etapa5_validar_periodo(N, a, period)
-        record(5, f"Ordem r={period}; a^r mod N={pow(a, period, N)}; "
-               + (f"x=a^(r/2) mod N={x}." if x is not None else "período ímpar ou raiz trivial."))
+        record(
+            5,
+            f"Ordem r={period}; a^r mod N={pow(a, period, N)}; "
+            + (
+                f"x=a^(r/2) mod N={x}."
+                if x is not None
+                else "período ímpar ou raiz trivial."
+            ),
+        )
         if x is None:
             if base is not None:
-                raise RuntimeError(f"A ordem {period} da base fixa {a} não fornece fatores. "
-                                   "Escolha outra base; mais shots com esta base não resolvem.")
+                raise RuntimeError(
+                    f"A ordem {period} da base fixa {a} não fornece fatores. "
+                    "Escolha outra base; mais shots com esta base não resolvem."
+                )
             continue
         factors = etapa6_extrair_fatores(N, x)
         if factors:
-            record(6, f"mdc(x−1,N)={gcd(x-1,N)}; mdc(x+1,N)={gcd(x+1,N)}; "
-                   f"{factors[0]} × {factors[1]} = {N}.")
+            record(
+                6,
+                f"mdc(x−1,N)={gcd(x - 1, N)}; mdc(x+1,N)={gcd(x + 1, N)}; "
+                f"{factors[0]} × {factors[1]} = {N}.",
+            )
             method = {
-                "local": "simulação quântica ideal", "aer": "AerSimulator ideal (CPU)",
-                "fake": "FakeProvider + AerSimulator " + ("com ruído" if fake_noise else "sem ruído"),
+                "local": "simulação quântica ideal",
+                "aer": "AerSimulator ideal (CPU)",
+                "fake": "FakeProvider + AerSimulator "
+                + ("com ruído" if fake_noise else "sem ruído"),
                 "ibm": "hardware IBM",
             }[mode]
-            return FactorizationResult(N, factors, method, attempt, a, period, counts, mode, steps)
+            return FactorizationResult(
+                N, factors, method, attempt, a, period, counts, mode, steps
+            )
     raise RuntimeError(
         f"Nenhum fator encontrado após {max_attempts} tentativa(s). "
         "Tente outra base, seed ou mais shots."
@@ -380,23 +488,71 @@ def factor(
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("N", type=int, nargs="?", default=77, help="inteiro a fatorar (padrão: 77)")
-    parser.add_argument("--mode", choices=("aer", "fake", "ibm", "local"), default="aer",
-                        help="executor quântico; local mantém a referência NumPy (padrão: aer)")
-    parser.add_argument("--quantum", action="store_true", help="pular divisão por primos pequenos para demonstrar a busca quântica")
-    parser.add_argument("--base", type=int, help="fixar a base a; use com --quantum para uma demonstração")
+    parser.add_argument(
+        "N", type=int, nargs="?", default=77, help="inteiro a fatorar (padrão: 77)"
+    )
+    parser.add_argument(
+        "--mode",
+        choices=("aer", "fake", "ibm", "local"),
+        default="aer",
+        help="executor quântico; local mantém a referência NumPy (padrão: aer)",
+    )
+    parser.add_argument(
+        "--quantum",
+        action="store_true",
+        help="pular divisão por primos pequenos para demonstrar a busca quântica",
+    )
+    parser.add_argument(
+        "--base",
+        type=int,
+        help="fixar a base a; use com --quantum para uma demonstração",
+    )
     parser.add_argument("--shots", type=int, default=1024)
-    parser.add_argument("--max-attempts", type=int, help="padrão: 1 no IBM, 20 nos simuladores")
-    parser.add_argument("--seed", type=int, help="semente para reprodução local; não controla ruído do hardware")
-    parser.add_argument("--backend", help="nome do backend IBM ou fake; seleção automática se omitido")
-    parser.add_argument("--instance", help="CRN da instância IBM; também aceita IBM_QUANTUM_INSTANCE")
-    parser.add_argument("--histogram", type=Path, help="salvar histograma das medições em um arquivo, por exemplo resultado.png")
-    parser.add_argument("--fake-ideal", action="store_true", help="desativar ruído do FakeProvider, mantendo a topologia")
-    parser.add_argument("--max-memory-mb", type=int, help="orçamento para a simulação local NumPy; padrão automático até 2048 MiB")
-    parser.add_argument("--show-circuit", action="store_true", help="exibir diagrama textual além das etapas")
-    parser.add_argument("--synthesis", choices=("auto", "permutation", "dense"), default="auto")
-    parser.add_argument("--hardware-info", action="store_true", help="mostrar recursos locais e encerrar")
-    parser.add_argument("--save-json", type=Path, help="salvar fatores, medições e histórico das etapas")
+    parser.add_argument(
+        "--max-attempts", type=int, help="padrão: 1 no IBM, 20 nos simuladores"
+    )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        help="semente para reprodução local; não controla ruído do hardware",
+    )
+    parser.add_argument(
+        "--backend", help="nome do backend IBM ou fake; seleção automática se omitido"
+    )
+    parser.add_argument(
+        "--instance", help="CRN da instância IBM; também aceita IBM_QUANTUM_INSTANCE"
+    )
+    parser.add_argument(
+        "--histogram",
+        type=Path,
+        help="salvar histograma das medições em um arquivo, por exemplo resultado.png",
+    )
+    parser.add_argument(
+        "--fake-ideal",
+        action="store_true",
+        help="desativar ruído do FakeProvider, mantendo a topologia",
+    )
+    parser.add_argument(
+        "--max-memory-mb",
+        type=int,
+        help="orçamento para a simulação local NumPy; padrão automático até 2048 MiB",
+    )
+    parser.add_argument(
+        "--show-circuit",
+        action="store_true",
+        help="exibir diagrama textual além das etapas",
+    )
+    parser.add_argument(
+        "--synthesis", choices=("auto", "permutation", "dense"), default="auto"
+    )
+    parser.add_argument(
+        "--hardware-info",
+        action="store_true",
+        help="mostrar recursos locais e encerrar",
+    )
+    parser.add_argument(
+        "--save-json", type=Path, help="salvar fatores, medições e histórico das etapas"
+    )
     args = parser.parse_args(argv)
     try:
         if args.hardware_info:
@@ -407,12 +563,22 @@ def main(argv=None):
         if args.fake_ideal and args.mode != "fake":
             raise ValueError("--fake-ideal exige --mode fake.")
         result = factor(
-            args.N, mode=args.mode, shots=args.shots,
-            max_attempts=args.max_attempts if args.max_attempts is not None else (1 if args.mode == "ibm" else 20),
-            seed=args.seed, quantum=args.quantum, base=args.base,
-            backend_name=args.backend, instance=args.instance, progress=print,
-            max_memory_mb=args.max_memory_mb, fake_noise=not args.fake_ideal,
-            show_circuit=args.show_circuit, synthesis=args.synthesis,
+            args.N,
+            mode=args.mode,
+            shots=args.shots,
+            max_attempts=args.max_attempts
+            if args.max_attempts is not None
+            else (1 if args.mode == "ibm" else 20),
+            seed=args.seed,
+            quantum=args.quantum,
+            base=args.base,
+            backend_name=args.backend,
+            instance=args.instance,
+            progress=print,
+            max_memory_mb=args.max_memory_mb,
+            fake_noise=not args.fake_ideal,
+            show_circuit=args.show_circuit,
+            synthesis=args.synthesis,
         )
         p, q = result.factors
         print(f"Fatores encontrados: {p} × {q} = {result.N}")
@@ -420,26 +586,41 @@ def main(argv=None):
         if result.period is not None:
             print(f"Período validado: {result.period}; base: {result.base}")
         if args.save_json:
-            args.save_json.write_text(json.dumps(asdict(result), ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+            args.save_json.write_text(
+                json.dumps(asdict(result), ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
             print(f"Resultado salvo em {args.save_json}")
         if args.histogram:
             if result.counts:
                 import matplotlib
+
                 matplotlib.use("Agg")
                 from matplotlib import pyplot as plt
                 from qiskit.visualization import plot_histogram
-                figure = plot_histogram(result.counts, number_to_keep=30, figsize=(14, 5))
+
+                figure = plot_histogram(
+                    result.counts, number_to_keep=30, figsize=(14, 5)
+                )
                 figure.savefig(args.histogram, bbox_inches="tight")
                 plt.close(figure)
                 print(f"Histograma salvo em {args.histogram}")
             else:
-                print("Não houve medições quânticas; a fatoração foi resolvida classicamente.")
+                print(
+                    "Não houve medições quânticas; a fatoração foi resolvida classicamente."
+                )
         return 0
     except ImportError as exc:
-        print(f"Dependência ausente: {exc}. Instale com: python -m pip install -r requirements.txt", file=sys.stderr)
+        print(
+            f"Dependência ausente: {exc}. Instale com: python -m pip install -r requirements.txt",
+            file=sys.stderr,
+        )
         return 2
     except MemoryError:
-        print("Erro: memória insuficiente para construir ou simular o circuito deste N.", file=sys.stderr)
+        print(
+            "Erro: memória insuficiente para construir ou simular o circuito deste N.",
+            file=sys.stderr,
+        )
         return 1
     except (ValueError, RuntimeError, OSError) as exc:
         print(f"Erro: {exc}", file=sys.stderr)

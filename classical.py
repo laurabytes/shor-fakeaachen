@@ -1,4 +1,5 @@
 """rotinas clássicas auxiliares para a implementação de shor fornecida."""
+
 from __future__ import annotations
 from fractions import Fraction
 from math import lcm
@@ -53,8 +54,8 @@ def perfect_power_factors(n: int):
         if root > 1 and root**k == n:
             # retorna uma decomposição não trivial em dois fatores.
             if k % 2 == 0:
-                return root**(k // 2), root**(k // 2)
-            return root, root**(k - 1)
+                return root ** (k // 2), root ** (k // 2)
+            return root, root ** (k - 1)
     return None
 
 
@@ -71,7 +72,9 @@ def recover_order(counts: dict[str, int], N: int, a: int, num_counting_qubits: i
     """
     Q = 1 << num_counting_qubits
     candidates = []
-    for bitstring, count in sorted(counts.items(), key=lambda item: item[1], reverse=True):
+    for bitstring, count in sorted(
+        counts.items(), key=lambda item: item[1], reverse=True
+    ):
         y = _measurement_integer(bitstring)
         if y == 0:
             continue
