@@ -93,7 +93,7 @@ A simulação Aer de E0 não foi concluída. Assim, ainda não há comparação 
 - **resultados_fakeaachen/backend_snapshot.json**, **calibracao_qubits.csv** e **calibracao_arestas.csv**: caracterização do snapshot.
 - **resultados_fakeaachen/validacao_compacta/**: contagens compactadas mantidas como evidência.
 
-O arquivo **validacao_aer_compacta.py** preserva a tentativa anterior de remapeamento do NoiseModel original. Ela depende de estruturas internas do Aer e falhou nesta configuração devido a custom noise passes; para o modelo simplificado, use o script com sufixo **_ruido**.
+O arquivo **validacao_aer_compacta.py** é mantido como ponto de entrada compatível e encaminha para a implementação única em **validacao_aer_compacta_ruido.py**. Isso evita manter duas versões quase idênticas da compactação. No modo noisy, a implementação usa um modelo simplificado derivado do snapshot; a tentativa anterior de remapear diretamente o NoiseModel gerado por from_backend encontrou custom noise passes que não podiam ser reindexados automaticamente.
 
 ## Ambiente registrado
 
