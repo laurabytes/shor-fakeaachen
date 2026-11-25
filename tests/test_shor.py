@@ -1,11 +1,27 @@
 """testes rápidos do fluxo lógico de shor."""
 
+import importlib
 import unittest
 
 from shor import factor
 
 
 class TestShorLocal(unittest.TestCase):
+    def test_modulos_importaveis(self):
+        modules = (
+            "shor",
+            "quantum",
+            "classical",
+            "backends",
+            "resources",
+            "otimizar",
+            "validar",
+            "validar_aer",
+        )
+        for name in modules:
+            with self.subTest(module=name):
+                importlib.import_module(name)
+
     def test_fatora_77_com_base_30(self):
         result = factor(
             77,
