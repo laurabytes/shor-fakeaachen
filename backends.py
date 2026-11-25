@@ -65,7 +65,5 @@ def run_fake(
             f"FakeAachen: profundidade {compiled.depth()}, "
             f"{compiled.size()} operações; ruído={noise}."
         )
-    result = simulator.run(
-        compiled, shots=shots, seed_simulator=seed
-    ).result()
+    result = simulator.run(compiled, shots=shots, seed_simulator=seed).result()
     return result.get_counts(compiled)

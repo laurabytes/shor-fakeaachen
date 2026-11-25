@@ -358,7 +358,7 @@ def main():
             ),
             encoding="utf-8",
         )
-        # mantém a referência em memória apenas quando a validação opcional foi pedida.
+        # libera o circuito recompilado depois de salvar a prévia.
         del best_circuit
         gc.collect()
 
