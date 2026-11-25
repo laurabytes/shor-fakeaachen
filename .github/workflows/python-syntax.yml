@@ -24,11 +24,14 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: instalar dependência do teste lógico
-        run: python -m pip install "numpy>=2.2,<3"
+      - name: instalar dependências de verificação
+        run: python -m pip install "numpy>=2.2,<3" ruff
 
       - name: verificar sintaxe
         run: python -m compileall -q .
 
-      - name: executar teste de fatoração local
+      - name: verificar imports e nomes
+        run: ruff check --select F .
+
+      - name: executar testes
         run: python -m unittest discover -s tests -v
