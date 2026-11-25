@@ -14,8 +14,8 @@ from __future__ import annotations
 import argparse
 import csv
 import json
-from pathlib import Path
 from math import gcd
+from pathlib import Path
 
 N = 77
 A = 30
