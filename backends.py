@@ -1,9 +1,9 @@
-"""Executores Aer e FakeProvider usados pela demonstração de Shor."""
+"""executores aer e fakeprovider usados pela demonstração de shor."""
 from __future__ import annotations
 
 
 def _fake_backend(num_qubits: int, backend_name: str | None = None):
-    """Retorna o snapshot FakeAachen e valida o nome solicitado."""
+    """retorna o snapshot fakeaachen e valida o nome solicitado."""
     from qiskit_ibm_runtime.fake_provider import FakeAachen
 
     accepted_names = {"fakeaachen", "fake_aachen", "ibm_aachen", "aachen"}
@@ -20,7 +20,7 @@ def _fake_backend(num_qubits: int, backend_name: str | None = None):
 
 
 def prepare_for_backend(circuit, backend, seed: int | None = None):
-    """Transpila o circuito para o conjunto de portas e a topologia do backend."""
+    """transpila o circuito para o conjunto de portas e a topologia do backend."""
     from qiskit import transpile
 
     return transpile(
@@ -32,7 +32,7 @@ def prepare_for_backend(circuit, backend, seed: int | None = None):
 
 
 def run_aer(circuit, shots: int = 1024, seed: int | None = None, progress=None):
-    """Executa o circuito em AerSimulator ideal, sem limitar memória do processo."""
+    """executa o circuito em aersimulator ideal, sem limitar memória do processo."""
     from qiskit import transpile
     from qiskit_aer import AerSimulator
 
@@ -65,7 +65,7 @@ def run_fake(
     noise: bool = True,
     progress=None,
 ):
-    """Executa no Aer usando topologia e, opcionalmente, ruído do FakeAachen."""
+    """executa no aer usando topologia e, opcionalmente, ruído do fakeaachen."""
     from qiskit_aer import AerSimulator
     from qiskit_aer.noise import NoiseModel
 

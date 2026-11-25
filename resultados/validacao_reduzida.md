@@ -3,7 +3,7 @@
 ## 1. Circuito lógico original — simulação ideal
 
 - Instância: N=77, a=30.
-- Método: simulação ideal NumPy do circuito lógico de busca de ordem (módulo shor_quantum.py).
+- Método: simulação ideal NumPy do circuito lógico de busca de ordem (módulo quantum.py).
 - Shots: 1.024; seed: 42; resultados distintos: 141.
 - Período recuperado: 30.
 - Verificação modular: a^r mod N = 1.
@@ -69,4 +69,4 @@ A tentativa Aer de E0 não foi concluída por custo computacional. Não há uma 
 
 A transpilação E3 é a melhor configuração entre as medições estruturais concluídas para a instância N=77, a=30 e o snapshot FakeAachen analisado. A simulação lógica ideal recupera r=30 e os fatores 7 e 11. Entretanto, a tentativa MPS do circuito E3 apresenta distribuição fortemente dispersa sob bond dimension 16, e a amostra ruidosa de 8 shots não recupera período ou fatores. Portanto, a validação ideal/ruidosa dos circuitos transpilados permanece inconclusiva e deve ser apresentada como limitação do estudo, não como confirmação da equivalência dos circuitos.
 
-Arquivos de evidência: resultados_fakeaachen/resultados.csv, resultados_fakeaachen/validacao_logica_counts.csv, resultados_fakeaachen/validacao_compacta/E3_ideal_mps_bond16_shots1024_counts.csv e resultados_fakeaachen/validacao_compacta/E3_noisy_mps_bond16_shots8_counts.csv.
+Arquivos de evidência: resultados/resultados.csv, resultados/validacao_logica_counts.csv, resultados/validacao_compacta/E3_ideal_mps_bond16_shots1024_counts.csv e resultados/validacao_compacta/E3_noisy_mps_bond16_shots8_counts.csv.

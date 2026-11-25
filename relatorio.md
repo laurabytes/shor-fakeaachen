@@ -1,4 +1,4 @@
-# relatório final · shor no fakeaachen
+# relatório · shor no fakeaachen
 
 **aluna:** Laura Fagundes  
 **disciplina:** Computação Quântica Aplicada à Defesa Cibernética  
@@ -47,7 +47,7 @@ foram comparadas as seguintes configurações:
 
 E5 foi mantido no arquivo de resultados, mas foi pulado após a execução anterior ter sido encerrada pelo sistema operacional antes de produzir métricas. não foram estimados valores para E5.
 
-as métricas consideradas foram profundidade, operações totais, operações de dois qubits, qubits físicos ativos, tempo de transpilação e proxy independente de erros. o snapshot e as versões utilizadas estão registrados em `resultados_fakeaachen/`.
+as métricas consideradas foram profundidade, operações totais, operações de dois qubits, qubits físicos ativos, tempo de transpilação e proxy independente de erros. o snapshot e as versões utilizadas estão registrados em `resultados/`.
 
 ## 3. caracterização do backend
 
@@ -65,7 +65,7 @@ o snapshot local do FakeAachen registra:
 
 as portas principais do target são `rz`, `sx`, `x`, `cz` e `id`. o target também registra medição, reset, delay e controle condicional.
 
-os valores são provenientes de um snapshot do FakeProvider. não representam calibração ao vivo nem execução em uma QPU física. a figura de topologia está em `resultados_fakeaachen/topologia_fakeaachen.png`.
+os valores são provenientes de um snapshot do FakeProvider. não representam calibração ao vivo nem execução em uma QPU física. a figura de topologia está em `resultados/topologia_fakeaachen.png`.
 
 ## 4. resultados
 

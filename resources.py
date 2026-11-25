@@ -1,4 +1,4 @@
-"""Estimativa simples de memória para a simulação NumPy local."""
+"""estimativa simples de memória para a simulação numpy local."""
 from __future__ import annotations
 
 import os
@@ -7,7 +7,7 @@ import sys
 
 
 def _available_memory_mb() -> int:
-    """Retorna uma estimativa da memória disponível no sistema."""
+    """retorna uma estimativa da memória disponível no sistema."""
     try:
         page_count = os.sysconf("SC_AVPHYS_PAGES")
         page_size = os.sysconf("SC_PAGE_SIZE")
@@ -18,7 +18,7 @@ def _available_memory_mb() -> int:
 
 
 def memory_budget_mb(requested: int | None = None) -> int:
-    """Define o orçamento de memória para a simulação NumPy local."""
+    """define o orçamento de memória para a simulação numpy local."""
     available = _available_memory_mb()
     default = min(2048, max(256, available // 4))
 
@@ -30,7 +30,7 @@ def memory_budget_mb(requested: int | None = None) -> int:
 
 
 def hardware_info() -> dict[str, object]:
-    """Resume informações do ambiente de execução."""
+    """resume informações do ambiente de execução."""
     return {
         "python": sys.version.split()[0],
         "platform": platform.platform(),
@@ -41,7 +41,7 @@ def hardware_info() -> dict[str, object]:
 
 
 def check_resources(N: int, mode: str, budget_mb: int | None) -> None:
-    """Verifica o orçamento estimado antes de alocar o estado NumPy."""
+    """verifica o orçamento estimado antes de alocar o estado numpy."""
     if mode != "local":
         return
 

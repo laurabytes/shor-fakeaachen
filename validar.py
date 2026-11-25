@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Validação reduzida e reprodutível para o estudo Shor/FakeAachen.
+"""validação reduzida e reprodutível para o estudo shor/fakeaachen.
 
-Executa a simulação ideal do circuito lógico de busca de ordem usando a
-implementação NumPy do projeto, recupera e verifica o período/fatores e
-consolida as métricas já medidas dos circuitos transpilados E0 e E3.
+executa a simulação ideal do circuito lógico de busca de ordem usando a
+implementação numpy do projeto, recupera e verifica o período/fatores e
+consolida as métricas já medidas dos circuitos transpilados e0 e e3.
 
-IMPORTANTE: esta rotina NÃO executa novas simulações Aer. Ela reproduz a
-simulação lógica ideal NumPy e audita as contagens MPS já salvas para E3,
+importante: esta rotina não executa novas simulações aer. ela reproduz a
+simulação lógica ideal numpy e audita as contagens mps já salvas para e3,
 mantendo explícitas as limitações da aproximação.
 """
 from __future__ import annotations
@@ -106,7 +106,7 @@ def experiment_summary(row: dict[str, str], basis_ops: set[str]) -> dict:
 
 
 def audit_mps_counts(csv_path: Path, recover_order) -> dict | None:
-    """Resume contagens Aer já existentes sem executar uma nova simulação."""
+    """resume contagens aer já existentes sem executar uma nova simulação."""
     if not csv_path.exists():
         return None
 
@@ -156,17 +156,17 @@ def main() -> int:
         parser.error("--shots deve ser positivo e --seed não pode ser negativo.")
 
     project = Path(__file__).resolve().parent
-    outdir = args.output or (project / "resultados_fakeaachen")
+    outdir = args.output or (project / "resultados")
     outdir.mkdir(parents=True, exist_ok=True)
     csv_path = outdir / "resultados.csv"
     snapshot_path = outdir / "backend_snapshot.json"
 
-    # 1. Reproduz a validação ideal do circuito lógico de busca de ordem.
-    # Esta simulação NumPy implementa a evolução lógica reduzida (registro de
+    # 1. reproduz a validação ideal do circuito lógico de busca de ordem.
+    # esta simulação numpy implementa a evolução lógica reduzida (registro de
     # contagem + registro alvo), não o circuito físico de 156 fios.
     try:
-        from shor_quantum import simulate_order_finding
-        from shor_classical import recover_order
+        from quantum import simulate_order_finding
+        from classical import recover_order
     except Exception as exc:
         raise SystemExit(f"Não foi possível importar os módulos do projeto: {exc}")
 
@@ -176,7 +176,7 @@ def main() -> int:
     period = recover_order(counts, N, A, 2 * (N - 1).bit_length())
     order_factor_check = validate_period_and_factors(period)
     logical_result = {
-        "method": "simulação ideal NumPy do circuito lógico de busca de ordem (módulo shor_quantum.py)",
+        "method": "simulação ideal NumPy do circuito lógico de busca de ordem (módulo quantum.py)",
         "not_aer": True,
         "N": N,
         "a": A,
@@ -188,7 +188,7 @@ def main() -> int:
         **order_factor_check,
     }
 
-    # 2. Confere os resultados já medidos dos circuitos físicos transpilados.
+    # 2. confere os resultados já medidos dos circuitos físicos transpilados.
     rows = load_experiment_rows(csv_path)
     if snapshot_path.exists():
         snapshot = json.loads(snapshot_path.read_text(encoding="utf-8"))
@@ -246,7 +246,7 @@ def main() -> int:
         for bitstring, count in sorted(counts.items(), key=lambda kv: (-kv[1], kv[0])):
             writer.writerow([bitstring, count])
 
-    # Lê as contagens MPS já existentes. Esta auditoria não inicia outro job Aer.
+    # lê as contagens mps já existentes. esta auditoria não inicia outro job aer.
     mps_dir = outdir / "validacao_compacta"
     mps_audits = {}
     if mps_dir.exists():
