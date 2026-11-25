@@ -249,7 +249,6 @@ def run_aer(compact, mode: str, backend, physical_to_compact, args):
         "matrix_product_state_max_bond_dimension": args.bond_dimension,
         "matrix_product_state_truncation_threshold": args.truncation_threshold,
         "mps_sample_measure_algorithm": "mps_apply_measure",
-        "mps_log_data": True,
     }
     noise_meta = None
     if mode == "ideal":
@@ -266,11 +265,14 @@ def run_aer(compact, mode: str, backend, physical_to_compact, args):
     if isinstance(counts, list):
         counts = counts[0]
     summary = count_summary(counts)
-    metadata = {}
+    metadata_summary = {}
     try:
-        metadata = result.results[0].metadata or {}
+        raw_metadata = result.results[0].metadata or {}
+        for key, value in raw_metadata.items():
+            if value is None or isinstance(value, (str, int, float, bool)):
+                metadata_summary[key] = value
     except Exception:
-        pass
+        metadata_summary = {}
     return {
         "status": "completed",
         "mode": mode,
@@ -283,7 +285,7 @@ def run_aer(compact, mode: str, backend, physical_to_compact, args):
         "noise_model": noise_meta,
         "measurement_summary": summary,
         "counts": {str(k): int(v) for k, v in counts.items()},
-        "aer_result_metadata": metadata,
+        "aer_result_metadata_summary": metadata_summary,
     }
 
 
