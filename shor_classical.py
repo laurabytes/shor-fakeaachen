@@ -1,7 +1,7 @@
 """Rotinas clássicas auxiliares para a implementação de Shor fornecida."""
 from __future__ import annotations
 from fractions import Fraction
-from math import gcd, isqrt, lcm
+from math import gcd, lcm
 
 
 def is_prime(n: int) -> bool:
