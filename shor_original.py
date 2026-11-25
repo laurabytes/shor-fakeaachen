@@ -299,8 +299,12 @@ def factor(
             record(3, "Base a=N−1 descartada antes da execução quântica.")
             continue
         check_resources(N, mode, budget)
-        record(4, f"{3*n} qubits ({2*n} de contagem + {n} alvo), {shots} shots; "
-               f"orçamento local {budget} MiB.")
+        resource_detail = (
+            f"{3*n} qubits ({2*n} de contagem + {n} alvo), {shots} shots"
+        )
+        if mode == "local":
+            resource_detail += f"; orçamento de memória local {budget} MiB"
+        record(4, resource_detail)
         sample_seed = rng.randrange(2**32)
         # Conecta/valida a capacidade antes de construir um circuito para IBM.
         qiskit_errors = ()
@@ -337,7 +341,13 @@ def factor(
         from shor_classical import recover_order
         period = recover_order(counts, N, a, 2*n)
         if period is None:
-            record(5, "Medições insuficientes para validar uma ordem; nova tentativa.")
+            record(5, "Medições insuficientes para validar uma ordem.")
+            if base is not None:
+                raise RuntimeError(
+                    f"Não foi possível recuperar o período para a base fixa a={a}. "
+                    "Aumente os shots, altere a seed ou escolha outra base."
+                )
+            record(5, "Uma nova base será sorteada.")
             continue
         x = etapa5_validar_periodo(N, a, period)
         record(5, f"Ordem r={period}; a^r mod N={pow(a, period, N)}; "
@@ -377,7 +387,7 @@ def main(argv=None):
     parser.add_argument("--instance", help="CRN da instância IBM; também aceita IBM_QUANTUM_INSTANCE")
     parser.add_argument("--histogram", type=Path, help="salvar histograma das medições em um arquivo, por exemplo resultado.png")
     parser.add_argument("--fake-ideal", action="store_true", help="desativar ruído do FakeProvider, mantendo a topologia")
-    parser.add_argument("--max-memory-mb", type=int, help="orçamento de memória; padrão automático até 2048 MiB")
+    parser.add_argument("--max-memory-mb", type=int, help="orçamento para a simulação local NumPy; padrão automático até 2048 MiB")
     parser.add_argument("--show-circuit", action="store_true", help="exibir diagrama textual além das etapas")
     parser.add_argument("--synthesis", choices=("auto", "permutation", "dense"), default="auto")
     parser.add_argument("--hardware-info", action="store_true", help="mostrar recursos locais e encerrar")
