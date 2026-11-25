@@ -24,7 +24,6 @@ import json
 import math
 import platform
 import statistics
-import sys
 import time
 from collections import Counter, defaultdict
 from pathlib import Path
