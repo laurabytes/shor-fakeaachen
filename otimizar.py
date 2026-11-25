@@ -1,19 +1,19 @@
-"""Investigação de transpilação de Shor em FakeAachen (Heron r3).
+"""investigação de transpilação de shor em fakeaachen (heron r3).
 
-O circuito lógico é importado de shor_quantum.py, material disponibilizado
-como código-base do professor. Este script não altera N nem a implementação
+o circuito lógico é importado de quantum.py, material disponibilizado
+como código-base do professor. este script não altera n nem a implementação
 lógica; varia apenas layout, roteamento e optimization_level.
 
-Uso:
-    python shor_otimizado.py
-    python shor_otimizado.py --shots 2048 --seed 42
-    python shor_otimizado.py --skip-experiment E5_dense_basic
+uso:
+    python otimizar.py
+    python otimizar.py --shots 2048 --seed 42
+    python otimizar.py --skip-experiment e5_dense_basic
 
-Cada linha do CSV é salva imediatamente após a transpilação. A coleta de métricas
+cada linha do csv é salva imediatamente após a transpilação. a coleta de métricas
 é incremental e os desenhos transpilados mostram apenas um prefixo para evitar
 consumo excessivo de memória em circuitos com milhões de instruções.
 
-Os resultados são gravados apenas após execução efetiva do Qiskit.
+os resultados são gravados apenas após execução efetiva do qiskit.
 """
 from __future__ import annotations
 
@@ -24,15 +24,14 @@ import json
 import math
 import platform
 import statistics
-import sys
 import time
-from collections import Counter, defaultdict
+from collections import defaultdict
 from pathlib import Path
 
 N = 77
-A = 30  # Segunda base da busca reproduzível do código-base com seed=42.
+A = 30  # segunda base da busca reproduzível do código-base com seed=42.
 SEED_TRANSPILER = 42
-OUTPUT = Path(__file__).resolve().parent / "resultados_fakeaachen"
+OUTPUT = Path(__file__).resolve().parent / "resultados"
 
 
 def _version(package: str) -> str:
@@ -146,7 +145,7 @@ def _connected_greedy_region(graph, node_cost, edge_cost, size, start):
         scored = []
         for candidate in frontier:
             links = [edge_cost(candidate, u) for u in selected if candidate in graph[u]]
-            # Prioriza calibração do qubit e arestas de menor erro; um pequeno
+            # prioriza calibração do qubit e arestas de menor erro; um pequeno
             # bônus favorece um candidato com mais de uma conexão ao conjunto.
             score = node_cost[candidate] + statistics.mean(links) - 0.00015 * len(links)
             scored.append((score, candidate))
@@ -207,18 +206,18 @@ def _plot_topology(data, low_region, center_region, output):
     positions = nx.spring_layout(g, seed=42, iterations=80)
     low = set(low_region)
     center = set(center_region)
-    colors = ["#f29e4c" if q in low else "#54a6d8" if q in center else "#c8cdd3" for q in g.nodes]
+    colors = ["#C98CA5" if q in low else "#E9C6D4" if q in center else "#C9C4C9" for q in g.nodes]
     fig, ax = plt.subplots(figsize=(16, 13))
-    nx.draw_networkx_edges(g, positions, ax=ax, width=0.55, alpha=0.35)
+    nx.draw_networkx_edges(g, positions, ax=ax, width=0.55, alpha=0.42, edge_color="#D8D2D7")
     nx.draw_networkx_nodes(g, positions, node_size=24, node_color=colors, ax=ax)
     nx.draw_networkx_labels(g, positions, font_size=4, ax=ax)
     from matplotlib.patches import Patch
     ax.legend(handles=[
-        Patch(facecolor="#f29e4c", label="Região conectada: menor custo de calibração"),
-        Patch(facecolor="#54a6d8", label="Região BFS de referência central"),
-        Patch(facecolor="#c8cdd3", label="Demais qubits"),
-    ], loc="upper right", fontsize=8, framealpha=0.9)
-    ax.set_title("FakeAachen — mapa de conectividade (regiões candidatas destacadas)")
+        Patch(facecolor="#C98CA5", label="região conectada de menor custo"),
+        Patch(facecolor="#E9C6D4", label="região BFS central"),
+        Patch(facecolor="#C9C4C9", label="demais qubits"),
+    ], loc="upper right", fontsize=8, framealpha=0.94, edgecolor="#E7E1E5")
+    ax.set_title("fakeaachen · mapa de conectividade")
     ax.axis("off")
     fig.tight_layout()
     fig.savefig(output, dpi=220, bbox_inches="tight")
@@ -288,7 +287,7 @@ def _instruction_error_map(backend, operation_name, physical_qargs):
 
 
 def _collect_circuit_metrics(compiled, logical_circuit, backend):
-    """Coleta métricas em fluxo, sem criar listas com milhões de erros."""
+    """coleta métricas em fluxo, sem criar listas com milhões de erros."""
     ops = dict(compiled.count_ops())
     twoq = 0
     used_physical = set()
@@ -321,6 +320,11 @@ def _collect_circuit_metrics(compiled, logical_circuit, backend):
                 two_error_n += 1
 
     fidelity_proxy = math.exp(log_survival_sum) if n_errors else None
+    # o produto pode sofrer underflow após milhões de instruções. nesse caso,
+    # o log continua sendo a métrica comparável; não grave zero como se fosse
+    # uma estimativa física exata.
+    if fidelity_proxy == 0.0:
+        fidelity_proxy = None
     initial_map, final_map = _layout_maps(compiled, logical_circuit)
     return {
         "depth": compiled.depth(),
@@ -337,7 +341,7 @@ def _collect_circuit_metrics(compiled, logical_circuit, backend):
         "mean_2q_error_used": two_error_sum / two_error_n if two_error_n else None,
         "mean_readout_error_used": read_error_sum / read_error_n if read_error_n else None,
         "n_instruction_errors_in_proxy": n_errors,
-        # Guarda o log da proxy para evitar underflow numérico em produtos muito pequenos.
+        # guarda o log da proxy para evitar underflow numérico em produtos muito pequenos.
         "log_fidelity_proxy_independent_errors": log_survival_sum if n_errors else None,
         "log10_fidelity_proxy_independent_errors": (log_survival_sum / math.log(10)) if n_errors else None,
         "fidelity_proxy_independent_errors": fidelity_proxy,
@@ -345,7 +349,7 @@ def _collect_circuit_metrics(compiled, logical_circuit, backend):
 
 
 def _write_circuit_preview(compiled, path, max_instructions=80):
-    """Salva um prefixo legível; evita desenhar milhões de instruções em texto."""
+    """salva um prefixo legível; evita desenhar milhões de instruções em texto."""
     preview = compiled.copy_empty_like()
     for item in compiled.data[:max_instructions]:
         preview.append(item.operation, item.qubits, item.clbits)
@@ -386,93 +390,82 @@ def _render_comparison_plots(rows, output):
         ("two_qubit_ops", "Operações de dois qubits", "operacoes_2q.png"),
         ("transpile_time_s", "Tempo de transpilação (s)", "tempo_transpilacao.png"),
     ]
+    bar_colors = ["#B87591" if label == "E3_L3_auto" else "#C9C4C9" for label in labels]
     for key, ylabel, filename in charts:
         values = [float(r[key]) for r in valid]
         fig, ax = plt.subplots(figsize=(12, 5))
-        ax.bar(range(len(labels)), values)
+        ax.bar(range(len(labels)), values, color=bar_colors, width=0.62, zorder=3)
         ax.set_xticks(range(len(labels)), labels, rotation=35, ha="right")
-        ax.set_ylabel(ylabel)
-        ax.set_title(ylabel + " por configuração")
-        ax.grid(axis="y", alpha=0.25)
+        ax.set_ylabel(ylabel.lower())
+        ax.set_title((ylabel + " por configuração").lower(), loc="left")
+        ax.grid(axis="y", color="#E7E1E5", linewidth=0.8, zorder=0)
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        ax.spines["left"].set_visible(False)
+        ax.spines["bottom"].set_color("#E7E1E5")
+        ax.tick_params(axis="both", length=0)
         fig.tight_layout()
-        fig.savefig(output / filename, dpi=180)
+        fig.savefig(output / filename, dpi=180, bbox_inches="tight")
         plt.close(fig)
     fidelity = [(r["experiment_id"], r.get("log10_fidelity_proxy_independent_errors")) for r in valid]
     fidelity = [(n, float(v)) for n, v in fidelity if v not in (None, "")]
     if fidelity:
         fig, ax = plt.subplots(figsize=(12, 5))
-        ax.bar(range(len(fidelity)), [v for _, v in fidelity])
+        proxy_colors = ["#B87591" if name == "E3_L3_auto" else "#C9C4C9" for name, _ in fidelity]
+        ax.bar(range(len(fidelity)), [v for _, v in fidelity], color=proxy_colors, width=0.62, zorder=3)
         ax.set_xticks(range(len(fidelity)), [n for n, _ in fidelity], rotation=35, ha="right")
         ax.set_ylabel("log10 da proxy multiplicativa (maior = melhor)")
-        ax.set_title("Proxy independente de erros em escala logarítmica")
-        ax.grid(axis="y", alpha=0.25)
+        ax.set_title("proxy independente de erros".lower(), loc="left")
+        ax.grid(axis="y", color="#E7E1E5", linewidth=0.8, zorder=0)
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        ax.spines["left"].set_visible(False)
+        ax.spines["bottom"].set_color("#E7E1E5")
+        ax.tick_params(axis="both", length=0)
         fig.tight_layout()
-        fig.savefig(output / "fidelidade_proxy.png", dpi=180)
+        fig.savefig(output / "fidelidade_proxy.png", dpi=180, bbox_inches="tight")
         plt.close(fig)
 
 
 def _write_report(rows, backend_info, output, N, a, seed):
-    good = [r for r in rows if r.get("status") == "ok"]
+    """grava um resumo curto da execução, sem campos para preenchimento manual."""
+    columns = (
+        "experimento", "status", "profundidade", "operações",
+        "operações 2q", "tempo (s)", "log10(proxy)",
+    )
     lines = [
-        "# Otimização da transpilação do algoritmo de Shor — FakeAachen",
+        "# resumo da execução",
         "",
-        "> Relatório gerado automaticamente a partir de execuções locais. Verifique os arquivos CSV/JSON e substitua os campos dos autores antes da entrega.",
+        f"- backend: {backend_info.get('backend_name', 'FakeAachen')}",
+        f"- qubits físicos: {backend_info.get('num_qubits', '—')}",
+        f"- instância: N={N}, a={a}",
+        f"- seed do transpiler: {seed}",
         "",
-        "## 1. Identificação e objetivo",
-        f"- Autora: [preencher]",
-        f"- Equipamento: FakeAachen ({backend_info.get('num_qubits')} qubits; snapshot FakeProvider)",
-        f"- Instância mantida: N={N}, a={a}; circuito lógico gerado pela implementação do professor.",
-        f"- Seed do transpiler: {seed}.",
-        "- O FakeProvider reproduz um snapshot de sistema IBM; não representa execução em QPU física nem calibração em tempo real.",
-        "",
-        "## 2. Metodologia",
-        "A configuração de referência usa `optimization_level=1` sem `initial_layout` manual. Foram comparados níveis de otimização, estratégias SABRE/DENSE e mapeamentos manuais em subgrafos conectados. Hipóteses: (H1) regiões conectadas com menores erros do snapshot podem reduzir o proxy de erro; (H2) layouts manuais podem melhorar o custo de roteamento, mas dependem da atribuição lógica-física; (H3) níveis mais altos de otimização podem reduzir operações ou profundidade sem necessariamente maximizar o proxy de fidelidade. A implementação lógica e os parâmetros N e a permanecem idênticos em todos os experimentos.",
-        "",
-        "## 3. Resultados quantitativos",
-        "| Experimento | Status | Nível | Layout | Routing | Profundidade | Operações | 2Q | SWAPs explícitos finais | Tempo (s) | log10(proxy fidelidade) |",
-        "|---|---|---:|---|---|---:|---:|---:|---:|---:|---:|",
+        "| " + " | ".join(columns) + " |",
+        "|---|---:|---:|---:|---:|---:|---:|",
     ]
-    for r in rows:
-        layout_label = "manual (initial_layout)" if str(r.get("manual_layout", "False")).lower() == "true" else (r.get("layout_method") or "auto")
-        log10_proxy = r.get("log10_fidelity_proxy_independent_errors")
-        lines.append("| {experiment_id} | {status} | {optimization_level} | {layout_method} | {routing_method} | {depth} | {total_ops} | {two_qubit_ops} | {swap_count_after_translation} | {transpile_time_s} | {log10_proxy} |".format(
-            experiment_id=r.get("experiment_id"), status=r.get("status"), optimization_level=r.get("optimization_level"),
-            layout_method=layout_label, routing_method=r.get("routing_method") or "default",
-            depth=r.get("depth") if r.get("depth") not in (None, "") else "—", total_ops=r.get("total_ops") if r.get("total_ops") not in (None, "") else "—",
-            two_qubit_ops=r.get("two_qubit_ops") if r.get("two_qubit_ops") not in (None, "") else "—",
-            swap_count_after_translation=r.get("swap_count_after_translation") if r.get("swap_count_after_translation") not in (None, "") else "—",
-            transpile_time_s=r.get("transpile_time_s") if r.get("transpile_time_s") not in (None, "") else "—",
-            log10_proxy=(f"{float(log10_proxy):.3f}" if log10_proxy not in (None, "") else "—")))
-    failures = [r for r in rows if r.get("status") != "ok"]
-    if failures:
-        lines += ["", "### Experimentos que falharam (mantidos no conjunto de resultados)"]
-        for r in failures:
-            lines.append(f"- {r.get('experiment_id')}: {r.get('error') or 'falha sem mensagem detalhada'}")
+    for row in rows:
+        proxy = row.get("log10_fidelity_proxy_independent_errors")
+        proxy_text = f"{float(proxy):.3f}" if proxy not in (None, "") else "—"
+        values = (
+            row.get("experiment_id", "—"),
+            row.get("status", "—"),
+            row.get("depth") or "—",
+            row.get("total_ops") or "—",
+            row.get("two_qubit_ops") or "—",
+            f"{float(row['transpile_time_s']):.2f}" if row.get("transpile_time_s") else "—",
+            proxy_text,
+        )
+        lines.append("| " + " | ".join(str(value) for value in values) + " |")
     lines += [
         "",
-        "## 4. Discussão e respostas às questões",
-        "1. **Topologia:** interpretar em conjunto o número de portas de dois qubits, os qubits físicos selecionados e a conectividade indicada em `topologia_fakeaachen.png`. Não concluir vantagem apenas pela proximidade visual dos índices.",
-        "2. **Mapeamento manual:** comparar E6/E7/E8 com E0. O resultado depende dos valores que foram efetivamente transpilados; não presumir que o subgrafo de menor erro sempre vence.",
-        "3. **Profundidade versus fidelidade:** comparar profundidade com `log10_fidelity_proxy_independent_errors`. O log evita underflow do produto de milhões de fatores; a proxy supõe erros independentes e não é probabilidade exata de sucesso.",
-        "4. **Operações de dois qubits e roteamento:** avaliar `two_qubit_ops` e SWAPs explícitos pós-tradução. Em geral, SWAPs podem ser decompostos em portas nativas; por isso o total 2Q também é indicador do custo de roteamento.",
-        "5. **Estratégia recomendada:** escolher com base no conjunto profundidade, operações 2Q, proxy de erros e tempo de compilação, explicando os trade-offs. Não há configuração vencedora pré-assumida.",
-        "6. **Características e generalização:** conclusões valem para o snapshot FakeAachen e para esta instância/circuito; outras QPUs e snapshots podem ter acoplamento, portas nativas e calibrações diferentes.",
-        "",
-        "## 5. Limitações",
-        "- O FakeAachen é um backend simulado baseado em snapshot histórico, não hardware físico.",
-        "- A proxy multiplicativa supõe erros independentes e usa somente parâmetros disponíveis no target; não modela correlações, leakage, drift, crosstalk ou efeitos temporais completos.",
-        "- Os resultados de transpile dependem das versões de Qiskit e da seed informadas no ambiente.",
-        "- A instância de Shor é pequena e não permite inferir viabilidade de fatoração de chaves criptográficas reais.",
-        "",
-        "## 6. Arquivos de evidência",
-        "Consultar `resultados.csv`, `backend_snapshot.json`, `calibracao_qubits.csv`, `calibracao_arestas.csv`, `topologia_fakeaachen.png`, `circuito_logico.txt`, `circuito_referencia.txt`, `circuito_recomendado.txt` Os desenhos dos circuitos transpilados são prévias das primeiras 80 instruções; as métricas completas e a configuração estão registradas no CSV/JSON.",
-        "",
-        "## 7. Execução",
-        "Ver `README.md`. Os valores desta seção são gerados pelo script e não devem ser preenchidos manualmente.",
+        "os dados completos estão em `resultados.csv`.",
+        "a análise e as limitações estão em `../relatorio.md`.",
+        "E5 permanece registrado como pulado porque não produziu métricas.",
     ]
-    (output / "relatorio_resultados.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
-
-
+    (output / "resumo_execucao.md").write_text(
+        "\n".join(lines) + "\n", encoding="utf-8"
+    )
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--shots", type=int, default=32, help="shots por circuito/configuração na validação (padrão conservador: 32)")
@@ -486,7 +479,7 @@ def main():
     try:
         from qiskit import transpile
         from qiskit_ibm_runtime.fake_provider import FakeAachen
-        from shor_quantum import build_order_finding_circuit
+        from quantum import build_order_finding_circuit
     except ImportError as exc:
         raise SystemExit(
             "Dependência ausente. Execute `python -m pip install -r requirements.txt`. "
@@ -582,6 +575,7 @@ def main():
 
         print(f"\n[{spec['id']}] {spec['description']}", flush=True)
         start = time.perf_counter()
+        compiled = None
         try:
             print(f"[{spec['id']}] etapa 1/3: iniciando transpile (um processo).", flush=True)
             compiled = transpile(circuit, **transpile_kwargs(spec))
@@ -593,7 +587,7 @@ def main():
             row["transpile_time_s"] = round(elapsed, 6)
             row["status"] = "ok"
 
-            # Guardar somente a referência imediatamente. Os demais circuitos
+            # guardar somente a referência imediatamente. os demais circuitos
             # são liberados e o recomendado será recompilado uma única vez ao final.
             if spec["id"] == "E0_reference_L1_auto":
                 _write_circuit_preview(
@@ -604,27 +598,24 @@ def main():
                 f"2Q={row['two_qubit_ops']} time={elapsed:.2f}s",
                 flush=True,
             )
-            del compiled
+            compiled = None
             gc.collect()
         except Exception as exc:
             row["transpile_time_s"] = round(time.perf_counter() - start, 6)
             row["status"] = "error"
             row["error"] = f"{type(exc).__name__}: {exc}"
             print(f"ERRO: {row['error']}", flush=True)
-            try:
-                del compiled
-            except UnboundLocalError:
-                pass
+            compiled = None
             gc.collect()
 
         rows.append(row)
-        persist_rows()  # checkpoint depois de CADA experimento
+        persist_rows()  # checkpoint depois de cada experimento
 
     (args.output / "experiment_configurations.json").write_text(
         json.dumps(experiment_specs, indent=2, ensure_ascii=False), encoding="utf-8"
     )
 
-    # Seleção multicritério por ranking médio; não escolhe apenas menor profundidade.
+    # seleção multicritério por ranking médio; não escolhe apenas menor profundidade.
     valid = [r for r in rows if r["status"] == "ok"]
     best_id = None
     if valid:
@@ -656,7 +647,7 @@ def main():
             "selection_method": "ranking médio em profundidade, gates 2Q, operações totais e log10 da proxy de fidelidade quando disponível",
             "warning": "A seleção é multicritério auxiliar; a decisão final exige interpretação dos resultados e das limitações do proxy. O circuito foi recompilado com os mesmos parâmetros para exportação.",
         }, indent=2, ensure_ascii=False), encoding="utf-8")
-        # Mantém a referência em memória apenas quando a validação opcional foi pedida.
+        # mantém a referência em memória apenas quando a validação opcional foi pedida.
         if not args.validate:
             del best_circuit
         gc.collect()
@@ -701,7 +692,7 @@ def main():
         }
         validation_path = args.output / "validacao_counts.json"
 
-        # O circuito lógico original já foi executado no simulador NumPy local
+        # o circuito lógico original já foi executado no simulador numpy local
         # (1024 shots); reutilizamos a evidência gravada para não repetir essa etapa.
         logical_evidence_path = Path("evidencia_local_N77_a30.json")
         if logical_evidence_path.exists():
@@ -725,8 +716,8 @@ def main():
 
         try:
             from qiskit_aer import AerSimulator
-            from shor_original import etapa5_validar_periodo, etapa6_extrair_fatores
-            from shor_classical import recover_order
+            from shor import etapa5_validar_periodo, etapa6_extrair_fatores
+            from classical import recover_order
 
             def summarize_counts(counts):
                 normalized = {str(k): int(v) for k, v in counts.items()}
@@ -772,7 +763,7 @@ def main():
             reference_spec = next(
                 spec for spec in experiment_specs if spec["id"] == "E0_reference_L1_auto"
             )
-            # Processa um circuito por vez para reduzir o pico de memória.
+            # processa um circuito por vez para reduzir o pico de memória.
             for config_id in ("E0_reference_L1_auto", best_id):
                 if config_id == "E0_reference_L1_auto":
                     qc = transpile(circuit, **transpile_kwargs(reference_spec))
@@ -821,7 +812,7 @@ def main():
                     del qc
                     gc.collect()
 
-            # Reforça o registro da validação mesmo quando cada modo falha separadamente.
+            # reforça o registro da validação mesmo quando cada modo falha separadamente.
             validation_path.write_text(
                 json.dumps(validation, indent=2, ensure_ascii=False), encoding="utf-8"
             )

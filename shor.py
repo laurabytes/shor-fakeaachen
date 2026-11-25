@@ -1,25 +1,25 @@
-"""Demonstração de Shor: AerSimulator, FakeProvider, IBM e referência NumPy.
+"""demonstração de shor: aersimulator, fakeprovider, ibm e referência numpy.
 
-Importar este módulo não acessa a rede nem inicia uma fatoração.
-Veja README.md para os limites desta implementação didática.
+importar este módulo não acessa a rede nem inicia uma fatoração.
+veja readme.md para os limites desta implementação didática.
 """
 
 from __future__ import annotations
 
 import argparse
-from dataclasses import asdict, dataclass, field
-from fractions import Fraction
-from math import gcd
 import json
 import logging
 import os
-from pathlib import Path
 import random
 import sys
+from dataclasses import asdict, dataclass, field
+from fractions import Fraction
+from math import gcd
+from pathlib import Path
 
-from shor_resources import check_resources, hardware_info, memory_budget_mb
+from resources import check_resources, hardware_info, memory_budget_mb
 
-# Numeração didática explícita. A correspondência com slides específicos deve
+# numeração didática explícita. a correspondência com slides específicos deve
 # ser conferida com o documento original; não se pressupõe uma fonte ausente.
 ETAPAS = {
     1: "Entrada e validação de N",
@@ -55,18 +55,18 @@ def _validate_N(N: int) -> None:
 
 
 def etapa1_validar_entrada(N: int) -> None:
-    """Etapa 1: recebe um inteiro N >= 2, sem truncar floats."""
+    """etapa 1: recebe um inteiro n >= 2, sem truncar floats."""
     _validate_N(N)
 
 
 def etapa2_preprocessamento(N: int, *, quantum: bool = False):
-    """Etapa 2: pares, divisão opcional, primalidade e potências perfeitas.
+    """etapa 2: pares, divisão opcional, primalidade e potências perfeitas.
 
-    A divisão por primos pequenos é uma conveniência da demonstração e pode
-    ser pulada. Não se faz divisão exaustiva até sqrt(N) antes de usar Shor.
-    Acima de 64 bits, a rejeição de primos usa Miller–Rabin probabilístico.
+    a divisão por primos pequenos é uma conveniência da demonstração e pode
+    ser pulada. não se faz divisão exaustiva até sqrt(n) antes de usar shor.
+    acima de 64 bits, a rejeição de primos usa miller–rabin probabilístico.
     """
-    from shor_classical import is_prime, perfect_power_factors
+    from classical import is_prime, perfect_power_factors
     found, factors = etapa_2_verificacao_preliminar(N, () if quantum else SMALL_PRIMES)
     if found:
         return factors, "divisão clássica"
@@ -78,7 +78,7 @@ def etapa2_preprocessamento(N: int, *, quantum: bool = False):
 
 
 def etapa_2_verificacao_preliminar(N, limites_primos=SMALL_PRIMES):
-    """Retorna fatores próprios encontrados por divisão clássica."""
+    """retorna fatores próprios encontrados por divisão clássica."""
     _validate_N(N)
     if N > 2 and N % 2 == 0:
         return True, (2, N // 2)
@@ -89,7 +89,7 @@ def etapa_2_verificacao_preliminar(N, limites_primos=SMALL_PRIMES):
 
 
 def etapa3(N, rng=None):
-    """Escolhe uma base; o chamador aproveita um eventual mdc não trivial."""
+    """escolhe uma base; o chamador aproveita um eventual mdc não trivial."""
     _validate_N(N)
     if N < 4:
         raise ValueError("A escolha de base exige N composto maior que 3.")
@@ -97,16 +97,16 @@ def etapa3(N, rng=None):
 
 
 def etapa3_escolher_base(N, rng=None, base=None):
-    """Etapa 3: escolhe a e aproveita um eventual divisor clássico."""
+    """etapa 3: escolhe a e aproveita um eventual divisor clássico."""
     a = base if base is not None else etapa3(N, rng)
     return a, gcd(a, N)
 
 
 def retrieve_denominator(measured_decimal, num_counting_qubits, N):
-    """Obtém um candidato a período usando TODOS os bits medidos.
+    """obtém um candidato a período usando todos os bits medidos.
 
-    O denominador pode ser apenas um divisor da ordem, ou um candidato
-    incorreto. A fatoração valida a**r mod N antes de usar esse resultado.
+    o denominador pode ser apenas um divisor da ordem, ou um candidato
+    incorreto. a fatoração valida a**r mod n antes de usar esse resultado.
     """
     _validate_N(N)
     if num_counting_qubits < 1:
@@ -117,18 +117,18 @@ def retrieve_denominator(measured_decimal, num_counting_qubits, N):
 
 
 def etapa5(x, N):
-    """Indica se a raiz candidata é trivial, impedindo a extração de fatores."""
+    """indica se a raiz candidata é trivial, impedindo a extração de fatores."""
     return x % N in (1, N - 1)
 
 
 def etapa6(x, N):
-    """Calcula os dois mdc; o chamador ainda deve validar os fatores."""
+    """calcula os dois mdc; o chamador ainda deve validar os fatores."""
     return gcd(x - 1, N), gcd(x + 1, N)
 
 
 def factors_from_measurements(counts, N, a, num_counting_qubits):
-    """Etapas 5 e 6; mantém a interface pública anterior."""
-    from shor_classical import recover_order
+    """etapas 5 e 6; mantém a interface pública anterior."""
+    from classical import recover_order
     r = recover_order(counts, N, a, num_counting_qubits)
     x = etapa5_validar_periodo(N, a, r)
     factors = etapa6_extrair_fatores(N, x) if x is not None else None
@@ -136,13 +136,13 @@ def factors_from_measurements(counts, N, a, num_counting_qubits):
 
 
 def _small_perfect_power(N):
-    """Compatibilidade: agora usa raízes inteiras, sem varrer bases até sqrt(N)."""
-    from shor_classical import perfect_power_factors
+    """compatibilidade: agora usa raízes inteiras, sem varrer bases até sqrt(n)."""
+    from classical import perfect_power_factors
     return perfect_power_factors(N)
 
 
 def etapa5_validar_periodo(N, a, r):
-    """Etapa 5: exige período par validado e raiz de 1 não trivial."""
+    """etapa 5: exige período par validado e raiz de 1 não trivial."""
     if r is None or r % 2 or pow(a, r, N) != 1:
         return None
     x = pow(a, r // 2, N)
@@ -150,7 +150,7 @@ def etapa5_validar_periodo(N, a, r):
 
 
 def etapa6_extrair_fatores(N, x):
-    """Etapa 6: calcula mdc(x±1,N) e confere divisores e produto."""
+    """etapa 6: calcula mdc(x±1,n) e confere divisores e produto."""
     for divisor in etapa6(x, N):
         if 1 < divisor < N and N % divisor == 0:
             return tuple(sorted((divisor, N // divisor)))
@@ -158,7 +158,7 @@ def etapa6_extrair_fatores(N, x):
 
 
 def _silence_ibm_runtime_warnings():
-    """Oculta avisos informativos do IBM Runtime, preservando erros reais."""
+    """oculta avisos informativos do ibm runtime, preservando erros reais."""
     logger_names = (
         "qiskit_ibm_runtime",
         "qiskit_ibm_runtime.qiskit_runtime_service",
@@ -170,8 +170,8 @@ def _silence_ibm_runtime_warnings():
     for name in logger_names:
         logging.getLogger(name).setLevel(logging.ERROR)
 
-    # Algumas versões do qiskit-ibm-runtime registram loggers filhos
-    # dinamicamente. Ajusta também os que já tiverem sido criados.
+    # algumas versões do qiskit-ibm-runtime registram loggers filhos
+    # dinamicamente. ajusta também os que já tiverem sido criados.
     for name in list(logging.root.manager.loggerDict):
         if "qiskit_runtime_service" in name or name.startswith("qiskit_ibm_runtime"):
             logging.getLogger(name).setLevel(logging.ERROR)
@@ -205,7 +205,7 @@ def _ibm_backend(num_qubits, backend_name=None, instance=None):
 def _run_ibm(N, a, shots, backend, seed, progress, *, circuit=None):
     from qiskit import transpile
     from qiskit_ibm_runtime import SamplerV2
-    from shor_quantum import build_order_finding_circuit
+    from quantum import build_order_finding_circuit
 
     if circuit is None:
         circuit = build_order_finding_circuit(N, a)
@@ -222,22 +222,27 @@ def etapa4_busca_quantica_de_ordem(
     N, a, *, mode, shots, seed, max_memory_mb, progress=None,
     circuit=None, backend=None, backend_name=None, fake_noise=True,
 ):
-    """Etapa 4: executa preparação, U modular controlada, QFT⁻¹ e medição.
+    """etapa 4: executa preparação, u modular controlada, qft⁻¹ e medição.
 
-    Todos os modos realizam a mesma busca de ordem; somente o executor muda.
-    A ordem nunca é calculada previamente para fabricar medições.
+    todos os modos realizam a mesma busca de ordem; somente o executor muda.
+    a ordem nunca é calculada previamente para fabricar medições.
     """
     if mode == "local":
-        from shor_quantum import simulate_order_finding
+        from quantum import simulate_order_finding
         return simulate_order_finding(N, a, shots=shots, seed=seed)
     if mode == "aer":
-        from shor_backends import run_aer
-        return run_aer(circuit, shots=shots, seed=seed,
-                       max_memory_mb=max_memory_mb, progress=progress)
+        from backends import run_aer
+        return run_aer(circuit, shots=shots, seed=seed, progress=progress)
     if mode == "fake":
-        from shor_backends import run_fake
-        return run_fake(circuit, shots=shots, seed=seed, backend_name=backend_name,
-                        noise=fake_noise, max_memory_mb=max_memory_mb, progress=progress)
+        from backends import run_fake
+        return run_fake(
+            circuit,
+            shots=shots,
+            seed=seed,
+            backend_name=backend_name,
+            noise=fake_noise,
+            progress=progress,
+        )
     return _run_ibm(N, a, shots, backend, seed, progress, circuit=circuit)
 
 
@@ -246,11 +251,11 @@ def factor(
     quantum=False, base=None, backend_name=None, instance=None, progress=None,
     max_memory_mb=None, fake_noise=True, show_circuit=False, synthesis="auto",
 ):
-    """Encontra um par de fatores próprios, ou informa a impossibilidade/falha.
+    """encontra um par de fatores próprios, ou informa a impossibilidade/falha.
 
-    quantum=True pula a divisão por primos pequenos para exercitar a busca
-    quântica. N par e potência perfeita ainda são tratados classicamente.
-    Não há teto fixo para N; a implementação quântica usa recursos exponenciais.
+    quantum=true pula a divisão por primos pequenos para exercitar a busca
+    quântica. n par e potência perfeita ainda são tratados classicamente.
+    não há teto fixo para n; a implementação quântica usa recursos exponenciais.
     """
     etapa1_validar_entrada(N)
     if mode not in ("local", "aer", "fake", "ibm"):
@@ -268,7 +273,7 @@ def factor(
     if seed is not None and (isinstance(seed, bool) or not isinstance(seed, int) or seed < 0):
         raise ValueError("seed deve ser um inteiro não negativo.")
 
-    budget = memory_budget_mb(max_memory_mb)
+    budget = memory_budget_mb(max_memory_mb) if mode == "local" else None
     steps = []
 
     def record(number, detail):
@@ -299,10 +304,14 @@ def factor(
             record(3, "Base a=N−1 descartada antes da execução quântica.")
             continue
         check_resources(N, mode, budget)
-        record(4, f"{3*n} qubits ({2*n} de contagem + {n} alvo), {shots} shots; "
-               f"orçamento local {budget} MiB.")
+        resource_detail = (
+            f"{3*n} qubits ({2*n} de contagem + {n} alvo), {shots} shots"
+        )
+        if mode == "local":
+            resource_detail += f"; orçamento de memória local {budget} MiB"
+        record(4, resource_detail)
         sample_seed = rng.randrange(2**32)
-        # Conecta/valida a capacidade antes de construir um circuito para IBM.
+        # conecta/valida a capacidade antes de construir um circuito para ibm.
         qiskit_errors = ()
         if mode != "local" or show_circuit:
             from qiskit.exceptions import QiskitError
@@ -314,11 +323,11 @@ def factor(
                     progress(f"Backend selecionado: {backend.name}")
             circuit = None
             if mode != "local" or show_circuit:
-                from shor_quantum import build_order_finding_circuit
+                from quantum import build_order_finding_circuit
                 selected_synthesis = synthesis
-                # O Aer aplica matrizes unitárias nativamente; evitar milhares
-                # de MCX para módulos gerais torna N=77 viável em CPU.
-                # A família com rotação de bits já possui circuitos curtos.
+                # o aer aplica matrizes unitárias nativamente; evitar milhares
+                # de mcx para módulos gerais torna n=77 viável em cpu.
+                # a família com rotação de bits já possui circuitos curtos.
                 if (mode == "aer" and synthesis == "auto"
                         and not (N == (1 << n) - 1 and a & (a - 1) == 0)):
                     selected_synthesis = "dense"
@@ -334,10 +343,16 @@ def factor(
         except qiskit_errors as exc:
             executor = "IBM" if mode == "ibm" else mode
             raise RuntimeError(f"Falha na execução {executor}: {exc}") from exc
-        from shor_classical import recover_order
+        from classical import recover_order
         period = recover_order(counts, N, a, 2*n)
         if period is None:
-            record(5, "Medições insuficientes para validar uma ordem; nova tentativa.")
+            record(5, "Medições insuficientes para validar uma ordem.")
+            if base is not None:
+                raise RuntimeError(
+                    f"Não foi possível recuperar o período para a base fixa a={a}. "
+                    "Aumente os shots, altere a seed ou escolha outra base."
+                )
+            record(5, "Uma nova base será sorteada.")
             continue
         x = etapa5_validar_periodo(N, a, period)
         record(5, f"Ordem r={period}; a^r mod N={pow(a, period, N)}; "
@@ -377,7 +392,7 @@ def main(argv=None):
     parser.add_argument("--instance", help="CRN da instância IBM; também aceita IBM_QUANTUM_INSTANCE")
     parser.add_argument("--histogram", type=Path, help="salvar histograma das medições em um arquivo, por exemplo resultado.png")
     parser.add_argument("--fake-ideal", action="store_true", help="desativar ruído do FakeProvider, mantendo a topologia")
-    parser.add_argument("--max-memory-mb", type=int, help="orçamento de memória; padrão automático até 2048 MiB")
+    parser.add_argument("--max-memory-mb", type=int, help="orçamento para a simulação local NumPy; padrão automático até 2048 MiB")
     parser.add_argument("--show-circuit", action="store_true", help="exibir diagrama textual além das etapas")
     parser.add_argument("--synthesis", choices=("auto", "permutation", "dense"), default="auto")
     parser.add_argument("--hardware-info", action="store_true", help="mostrar recursos locais e encerrar")

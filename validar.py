@@ -1,29 +1,27 @@
 #!/usr/bin/env python3
-"""Validação reduzida e reprodutível para o estudo Shor/FakeAachen.
+"""validação reduzida e reprodutível para o estudo shor/fakeaachen.
 
-Executa a simulação ideal do circuito lógico de busca de ordem usando a
-implementação NumPy do projeto, recupera e verifica o período/fatores e
-consolida as métricas já medidas dos circuitos transpilados E0 e E3.
+executa a simulação ideal do circuito lógico de busca de ordem usando a
+implementação numpy do projeto, recupera e verifica o período/fatores e
+consolida as métricas já medidas dos circuitos transpilados e0 e e3.
 
-IMPORTANTE: esta rotina NÃO simula os circuitos físicos transpilados E0/E3
-no Aer. Essa execução foi tentada, mas interrompida devido ao custo do circuito
-(156 fios físicos, >2 milhões de instruções). O relatório deixa essa limitação
-explícita; não atribui contagens simuladas a E0/E3.
+importante: esta rotina não executa novas simulações aer. ela reproduz a
+simulação lógica ideal numpy e audita as contagens mps já salvas para e3,
+mantendo explícitas as limitações da aproximação.
 """
 from __future__ import annotations
 
 import argparse
 import csv
 import json
-import math
-import sys
-from pathlib import Path
 from math import gcd
+from pathlib import Path
 
 N = 77
 A = 30
 DEFAULT_SHOTS = 1024
 DEFAULT_SEED = 42
+EXPECTED_PERIOD = 30
 REQUIRED_IDS = ("E0_reference_L1_auto", "E3_L3_auto")
 
 
@@ -54,7 +52,7 @@ def parse_json_field(row: dict[str, str], key: str, default):
 
 def validate_period_and_factors(period: int | None) -> dict:
     if period is None:
-        return {"period_valid": False, "factorization_valid": False,
+        return {"recovered_period": None, "period_valid": False, "factorization_valid": False,
                 "reason": "Não foi possível recuperar o período a partir das contagens."}
     period_ok = (period > 0 and pow(A, period, N) == 1)
     if not period_ok:
@@ -107,6 +105,47 @@ def experiment_summary(row: dict[str, str], basis_ops: set[str]) -> dict:
     }
 
 
+def audit_mps_counts(csv_path: Path, recover_order) -> dict | None:
+    """resume contagens aer já existentes sem executar uma nova simulação."""
+    if not csv_path.exists():
+        return None
+
+    with csv_path.open("r", newline="", encoding="utf-8") as f:
+        counts = {
+            row["bitstring"]: int(row["count"])
+            for row in csv.DictReader(f)
+        }
+    if not counts:
+        return None
+
+    shots = sum(counts.values())
+    period = recover_order(counts, N, A, 2 * (N - 1).bit_length())
+    phase_dimension = 1 << (2 * (N - 1).bit_length())
+    shots_near_ideal_peak = 0
+    for bitstring, count in counts.items():
+        measured = int(bitstring.replace(" ", ""), 2)
+        peak_index = round(measured * EXPECTED_PERIOD / phase_dimension)
+        nearest_peak = peak_index * phase_dimension / EXPECTED_PERIOD
+        if abs(measured - nearest_peak) <= 1:
+            shots_near_ideal_peak += count
+
+    return {
+        "source_csv": str(csv_path),
+        "shots": shots,
+        "distinct_outcomes": len(counts),
+        "maximum_outcome_count": max(counts.values()),
+        **validate_period_and_factors(period),
+        "shots_within_one_count_bin_of_nearest_r30_peak": shots_near_ideal_peak,
+        "fraction_within_one_count_bin_of_nearest_r30_peak": (
+            shots_near_ideal_peak / shots if shots else None
+        ),
+        "note": (
+            "A auditoria de proximidade aos picos é descritiva. Para MPS com truncamento, "
+            "não constitui prova de equivalência nem estimativa da probabilidade de fatoração."
+        ),
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--shots", type=int, default=DEFAULT_SHOTS)
@@ -117,17 +156,17 @@ def main() -> int:
         parser.error("--shots deve ser positivo e --seed não pode ser negativo.")
 
     project = Path(__file__).resolve().parent
-    outdir = args.output or (project / "resultados_fakeaachen")
+    outdir = args.output or (project / "resultados")
     outdir.mkdir(parents=True, exist_ok=True)
     csv_path = outdir / "resultados.csv"
     snapshot_path = outdir / "backend_snapshot.json"
 
-    # 1. Reproduz a validação ideal do circuito lógico de busca de ordem.
-    # Esta simulação NumPy implementa a evolução lógica reduzida (registro de
+    # 1. reproduz a validação ideal do circuito lógico de busca de ordem.
+    # esta simulação numpy implementa a evolução lógica reduzida (registro de
     # contagem + registro alvo), não o circuito físico de 156 fios.
     try:
-        from shor_quantum import simulate_order_finding
-        from shor_classical import recover_order
+        from quantum import simulate_order_finding
+        from classical import recover_order
     except Exception as exc:
         raise SystemExit(f"Não foi possível importar os módulos do projeto: {exc}")
 
@@ -137,7 +176,7 @@ def main() -> int:
     period = recover_order(counts, N, A, 2 * (N - 1).bit_length())
     order_factor_check = validate_period_and_factors(period)
     logical_result = {
-        "method": "simulação ideal NumPy do circuito lógico de busca de ordem (módulo shor_quantum.py)",
+        "method": "simulação ideal NumPy do circuito lógico de busca de ordem (módulo quantum.py)",
         "not_aer": True,
         "N": N,
         "a": A,
@@ -149,7 +188,7 @@ def main() -> int:
         **order_factor_check,
     }
 
-    # 2. Confere os resultados já medidos dos circuitos físicos transpilados.
+    # 2. confere os resultados já medidos dos circuitos físicos transpilados.
     rows = load_experiment_rows(csv_path)
     if snapshot_path.exists():
         snapshot = json.loads(snapshot_path.read_text(encoding="utf-8"))
@@ -182,25 +221,23 @@ def main() -> int:
         "logical_original_ideal": logical_result,
         "transpiled_circuit_structural_audit": comparison,
         "aer_simulation_E0_E3": {
-            "status": "not_completed_manual_interrupt",
+            "status": "E0_not_completed_E3_compacted_MPS_exploratory",
             "details": (
-                "Aer iniciou a tentativa sobre E0 (156 fios físicos, 2.519.962 instruções), "
-                "mas a execução foi interrompida manualmente com Ctrl+C antes da conclusão. "
-                "A tentativa anterior também registrou a opção max_qubits inválida; essa opção "
-                "foi retirada na versão seguinte. Nenhuma contagem Aer ideal/ruidosa de E0 ou E3 "
-                "é reportada neste arquivo."
+                "A tentativa Aer full-width de E0 (156 fios físicos, 2.519.962 instruções) "
+                "foi interrompida manualmente antes de produzir contagens. Para E3 existem "
+                "execuções compactadas MPS separadas, com bond dimension máximo 16 e truncamento "
+                "de 1e-8, auditadas em transpiled_E3_mps_count_audits. Essa aproximação apresentou "
+                "distribuição muito mais dispersa que a amostra lógica ideal e não deve ser tratada "
+                "como validação conclusiva. O resultado ruidoso de 8 shots é somente exploratório."
             ),
         },
         "interpretation": (
-            "A evidência ideal diz respeito ao circuito lógico original. As métricas de E0 e E3 "
-            "são resultados reais de transpilação, e a auditoria estrutural confere os dados "
-            "registrados no CSV e as portas frente ao snapshot. Isso não substitui uma simulação "
-            "de distribuição de medições dos circuitos transpilados."
+            "A simulação NumPy valida o fluxo ideal do circuito lógico original. As métricas "
+            "E0/E3 são resultados reais de transpilação. A execução compactada MPS de E3 é "
+            "aproximada e inconclusiva quanto à preservação da distribuição; a execução ruidosa "
+            "disponível tem somente 8 shots. A tentativa Aer full-width de E0 foi interrompida."
         ),
     }
-
-    json_path = outdir / "validacao_reduzida.json"
-    json_path.write_text(json.dumps(validation, indent=2, ensure_ascii=False), encoding="utf-8")
 
     counts_path = outdir / "validacao_logica_counts.csv"
     with counts_path.open("w", newline="", encoding="utf-8") as f:
@@ -208,6 +245,19 @@ def main() -> int:
         writer.writerow(["bitstring", "count"])
         for bitstring, count in sorted(counts.items(), key=lambda kv: (-kv[1], kv[0])):
             writer.writerow([bitstring, count])
+
+    # lê as contagens mps já existentes. esta auditoria não inicia outro job aer.
+    mps_dir = outdir / "validacao_compacta"
+    mps_audits = {}
+    if mps_dir.exists():
+        for count_file in sorted(mps_dir.glob("E3_*_counts.csv")):
+            audit = audit_mps_counts(count_file, recover_order)
+            if audit is not None:
+                mps_audits[count_file.name] = audit
+    validation["transpiled_E3_mps_count_audits"] = mps_audits
+
+    json_path = outdir / "validacao_reduzida.json"
+    json_path.write_text(json.dumps(validation, indent=2, ensure_ascii=False), encoding="utf-8")
 
     md = [
         "# Validação reduzida — Shor / FakeAachen", "",
@@ -235,15 +285,44 @@ def main() -> int:
         f"Reduções de E3 vs. E0: profundidade {comparison['reductions_E3_vs_E0_percent']['depth']:.2f}%; operações totais {comparison['reductions_E3_vs_E0_percent']['total_ops']:.2f}%; operações 2Q {comparison['reductions_E3_vs_E0_percent']['two_qubit_ops']:.2f}%.",
         f"A diferença de log10(proxy), E3 − E0, é {comparison['log10_proxy_E3_minus_E0']:.3f}; valor positivo favorece E3 nessa proxy aproximada.",
         "",
-        "## 3. Limitação da simulação dos circuitos físicos", "",
-        "A tentativa de Aer para E0 e E3 foi iniciada, mas a execução de E0 foi interrompida manualmente antes de produzir contagens. Uma tentativa anterior falhou por uma opção Aer inválida (`max_qubits`), que foi removida na versão posterior. Não há, portanto, resultados Aer ideal ou ruidoso para os circuitos transpilados.",
-        "A simulação ideal do circuito lógico original foi concluída. A comparação E0/E3 nesta etapa utiliza métricas reais de transpilação e proxy independente de erros, não distribuição experimental de medições pós-transpilação.",
+        "## 3. Auditoria das contagens MPS já existentes", "",
+    ]
+    if mps_audits:
+        md.extend([
+            "As contagens abaixo foram lidas de CSVs existentes; esta rotina não inicia novas simulações Aer.",
+            "",
+            "| Arquivo | Shots | Resultados distintos | Maior frequência | Período | Fatores | Próximos a pico r=30 (±1 bin) | % |",
+            "|---|---:|---:|---:|---:|---|---:|---:|",
+        ])
+        for filename, audit in mps_audits.items():
+            factors = audit.get("factors")
+            md.append(
+                f"| {filename} | {audit['shots']} | {audit['distinct_outcomes']} | "
+                f"{audit['maximum_outcome_count']} | {audit.get('recovered_period')} | "
+                f"{factors if factors is not None else '—'} | "
+                f"{audit['shots_within_one_count_bin_of_nearest_r30_peak']} | "
+                f"{100 * audit['fraction_within_one_count_bin_of_nearest_r30_peak']:.2f}% |"
+            )
+        md.extend([
+            "",
+            "A distância aos picos esperados é apenas uma verificação descritiva. Bond dimension e truncamento limitam a precisão do MPS; recuperar um período no pós-processamento, isoladamente, não comprova que a distribuição foi preservada.",
+            "",
+        ])
+    else:
+        md.extend([
+            "Não foram encontrados CSVs de contagens MPS E3 no diretório de validação.",
+            "",
+        ])
+    md.extend([
+        "## 4. Limitação da simulação dos circuitos físicos", "",
+        "A tentativa Aer para E0 foi iniciada, mas foi interrompida manualmente antes de produzir contagens. A simulação lógica ideal NumPy não substitui uma distribuição de medições do circuito transpilado. A validação MPS E3 disponível é aproximada e deve ser interpretada à luz da auditoria de distribuição acima.",
+        "A amostra ruidosa E3 de 8 shots é exploratória e pequena demais para estimar uma taxa de sucesso. Não há uma comparação estatística E0/E3 ideal e ruidosa concluída.",
         "",
-        "## 4. Conclusão da validação reduzida", "",
-        "A simulação ideal lógica recupera um período válido e fatores não triviais quando a verificação passa. E3 apresenta melhoria estrutural e melhor proxy de fidelidade frente a E0 neste snapshot e nesta instância. A equivalência lógica formal dos circuitos transpilados não foi testada por simulação Aer nesta execução; a simulação ruidosa completa permanece pendente por limitação computacional.",
+        "## 5. Conclusão da validação reduzida", "",
+        "A simulação ideal do circuito lógico recupera r=30 e os fatores 7 e 11. E3 apresenta melhoria estrutural e melhor proxy de fidelidade frente a E0 neste snapshot. A distribuição MPS aproximada de E3 deve ser tratada como inconclusiva quando diverge dos picos da amostra lógica; a execução ruidosa de 8 shots não permite estimar probabilidade de fatoração.",
         "",
         "Arquivos: `validacao_reduzida.json` e `validacao_logica_counts.csv`.",
-    ]
+    ])
     md_path = outdir / "validacao_reduzida.md"
     md_path.write_text("\n".join(md) + "\n", encoding="utf-8")
 
