@@ -34,14 +34,10 @@ def run_aer(circuit, shots: int = 1024, seed: int | None = None, progress=None):
     from qiskit_aer import AerSimulator
 
     simulator = AerSimulator()
-    compiled = transpile(
-        circuit, simulator, optimization_level=1, seed_transpiler=seed
-    )
+    compiled = transpile(circuit, simulator, optimization_level=1, seed_transpiler=seed)
     if progress:
         progress(f"Aer: profundidade {compiled.depth()}, {compiled.size()} operações.")
-    result = simulator.run(
-        compiled, shots=shots, seed_simulator=seed
-    ).result()
+    result = simulator.run(compiled, shots=shots, seed_simulator=seed).result()
     return result.get_counts(compiled)
 
 

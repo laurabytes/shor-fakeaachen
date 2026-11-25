@@ -68,6 +68,7 @@ def render_comparison_plots(rows, output):
         fig.savefig(output / "fidelidade_proxy.png", dpi=180, bbox_inches="tight")
         plt.close(fig)
 
+
 def write_report(rows, backend_info, output, N, a, seed):
     """grava um resumo curto da execução, sem campos para preenchimento manual."""
     columns = (

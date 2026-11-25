@@ -37,6 +37,7 @@ def layout_maps(compiled, logical_circuit):
                 pass
     return initial_map, final_map
 
+
 def collect_circuit_metrics(compiled, logical_circuit, backend):
     """coleta métricas em fluxo, sem criar listas com milhões de erros."""
     ops = dict(compiled.count_ops())
@@ -101,6 +102,7 @@ def collect_circuit_metrics(compiled, logical_circuit, backend):
         else None,
         "fidelity_proxy_independent_errors": fidelity_proxy,
     }
+
 
 def write_circuit_preview(compiled, path, max_instructions=80):
     """salva um prefixo legível; evita desenhar milhões de instruções em texto."""

@@ -19,10 +19,14 @@ ETAPAS = {
     6: "extração dos fatores",
 }
 
-SMALL_PRIMES = (2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97)
+SMALL_PRIMES = (
+    2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97
+)
 
 
 @dataclass
+
+
 class FactorizationResult:
     N: int
     factors: tuple[int, int]
@@ -99,8 +103,10 @@ def run_order_finding(
 
     selected_synthesis = synthesis
     n = (N - 1).bit_length()
-    if mode == "aer" and synthesis == "auto" and not (
-        N == (1 << n) - 1 and a & (a - 1) == 0
+    if (
+        mode == "aer"
+        and synthesis == "auto"
+        and not (N == (1 << n) - 1 and a & (a - 1) == 0)
     ):
         selected_synthesis = "dense"
     circuit = build_order_finding_circuit(N, a, synthesis=selected_synthesis)
@@ -150,11 +156,19 @@ def factor(
         raise ValueError("synthesis deve ser auto, dense ou permutation.")
     if isinstance(shots, bool) or not isinstance(shots, int) or shots < 1:
         raise ValueError("shots deve ser um inteiro positivo.")
-    if isinstance(max_attempts, bool) or not isinstance(max_attempts, int) or max_attempts < 1:
+    if (
+        isinstance(max_attempts, bool)
+        or not isinstance(max_attempts, int)
+        or max_attempts < 1
+    ):
         raise ValueError("max_attempts deve ser um inteiro positivo.")
-    if base is not None and (isinstance(base, bool) or not isinstance(base, int) or not 1 < base < N):
+    if base is not None and (
+        isinstance(base, bool) or not isinstance(base, int) or not 1 < base < N
+    ):
         raise ValueError("a base deve ser um inteiro com 1 < a < N.")
-    if seed is not None and (isinstance(seed, bool) or not isinstance(seed, int) or seed < 0):
+    if seed is not None and (
+        isinstance(seed, bool) or not isinstance(seed, int) or seed < 0
+    ):
         raise ValueError("seed deve ser um inteiro não negativo.")
     if not isinstance(fake_noise, bool):
         raise ValueError("fake_noise deve ser booleano.")
@@ -183,19 +197,30 @@ def factor(
         record(3, f"tentativa {attempt}/{max_attempts}: a={a}; mdc(a,N)={divisor}.")
         if divisor > 1:
             factors = tuple(sorted((divisor, N // divisor)))
-            return FactorizationResult(N, factors, "mdc clássico", attempt, a, steps=steps)
+            return FactorizationResult(
+                N, factors, "mdc clássico", attempt, a, steps=steps
+            )
         if a == N - 1:
             if base is not None:
-                raise ValueError("a base N−1 sempre produz raiz trivial; escolha outra.")
+                raise ValueError(
+                    "a base N−1 sempre produz raiz trivial; escolha outra."
+                )
             continue
 
         check_resources(N, mode, budget)
         record(4, f"{3 * n} qubits ({2 * n} de contagem + {n} de alvo); {shots} shots.")
         sample_seed = rng.randrange(2**32)
         counts = run_order_finding(
-            N, a, mode=mode, shots=shots, seed=sample_seed,
-            backend_name=backend_name, fake_noise=fake_noise,
-            synthesis=synthesis, show_circuit=show_circuit, progress=progress,
+            N,
+            a,
+            mode=mode,
+            shots=shots,
+            seed=sample_seed,
+            backend_name=backend_name,
+            fake_noise=fake_noise,
+            synthesis=synthesis,
+            show_circuit=show_circuit,
+            progress=progress,
         )
         period = recover_order(counts, N, a, 2 * n)
         value = validate_period(N, a, period)
@@ -213,7 +238,8 @@ def factor(
                 method = {
                     "local": "simulação lógica NumPy",
                     "aer": "AerSimulator ideal",
-                    "fake": "FakeAachen + AerSimulator" + (" com ruído" if fake_noise else " sem ruído"),
+                    "fake": "FakeAachen + AerSimulator"
+                    + (" com ruído" if fake_noise else " sem ruído"),
                 }[mode]
                 return FactorizationResult(
                     N, factors, method, attempt, a, period, counts, mode, steps
@@ -231,28 +257,40 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("N", type=int, nargs="?", default=77)
     parser.add_argument("--mode", choices=("local", "aer", "fake"), default="local")
-    parser.add_argument("--quantum", action="store_true", help="pula a divisão por primos pequenos")
+    parser.add_argument(
+        "--quantum", action="store_true", help="pula a divisão por primos pequenos"
+    )
     parser.add_argument("--base", type=int, help="fixa a base a")
     parser.add_argument("--shots", type=int, default=1024)
     parser.add_argument("--max-attempts", type=int, default=20)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--backend", help="nome do backend fake; padrão: FakeAachen")
-    parser.add_argument("--fake-ideal", action="store_true", help="desativa o ruído do FakeAachen")
+    parser.add_argument(
+        "--fake-ideal", action="store_true", help="desativa o ruído do FakeAachen"
+    )
     parser.add_argument("--max-memory-mb", type=int)
     parser.add_argument("--show-circuit", action="store_true")
-    parser.add_argument("--synthesis", choices=("auto", "permutation", "dense"), default="auto")
+    parser.add_argument(
+        "--synthesis", choices=("auto", "permutation", "dense"), default="auto"
+    )
     args = parser.parse_args(argv)
 
     try:
         if args.fake_ideal and args.mode != "fake":
             raise ValueError("--fake-ideal exige --mode fake.")
         result = factor(
-            args.N, mode=args.mode, shots=args.shots,
-            max_attempts=args.max_attempts, seed=args.seed,
-            quantum=args.quantum, base=args.base,
-            backend_name=args.backend, progress=print,
+            args.N,
+            mode=args.mode,
+            shots=args.shots,
+            max_attempts=args.max_attempts,
+            seed=args.seed,
+            quantum=args.quantum,
+            base=args.base,
+            backend_name=args.backend,
+            progress=print,
             max_memory_mb=args.max_memory_mb,
-            fake_noise=not args.fake_ideal, show_circuit=args.show_circuit,
+            fake_noise=not args.fake_ideal,
+            show_circuit=args.show_circuit,
             synthesis=args.synthesis,
         )
         p, q = result.factors

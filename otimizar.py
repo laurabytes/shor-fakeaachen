@@ -372,12 +372,12 @@ def main():
     write_report(rows, backend_info, args.output, N, A, args.seed)
     versions = {
         "python": platform.python_version(),
-        "qiskit": _version("qiskit"),
-        "qiskit-aer": _version("qiskit-aer"),
-        "qiskit-ibm-runtime": _version("qiskit-ibm-runtime"),
-        "numpy": _version("numpy"),
-        "matplotlib": _version("matplotlib"),
-        "networkx": _version("networkx"),
+        "qiskit": package_version("qiskit"),
+        "qiskit-aer": package_version("qiskit-aer"),
+        "qiskit-ibm-runtime": package_version("qiskit-ibm-runtime"),
+        "numpy": package_version("numpy"),
+        "matplotlib": package_version("matplotlib"),
+        "networkx": package_version("networkx"),
     }
     (args.output / "versions.json").write_text(
         json.dumps(versions, indent=2), encoding="utf-8"
@@ -387,7 +387,6 @@ def main():
     print(f"Resultados em: {args.output}")
 
     return 0
-
 
 
 if __name__ == "__main__":

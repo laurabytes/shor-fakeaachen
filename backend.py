@@ -25,6 +25,7 @@ def target_error(backend, name: str, qargs: tuple[int, ...]):
         pass
     return None
 
+
 def collect_backend_data(backend):
     edges_directed = list(backend.coupling_map.get_edges())
     edges = sorted(
@@ -99,6 +100,7 @@ def collect_backend_data(backend):
         "default_2q_error": default2,
     }
 
+
 def connected_greedy_region(graph, node_cost, edge_cost, size, start):
     selected = [start]
     selected_set = {start}
@@ -121,6 +123,7 @@ def connected_greedy_region(graph, node_cost, edge_cost, size, start):
         selected.append(chosen)
         selected_set.add(chosen)
     return selected
+
 
 def find_low_error_region(data, size):
     graph, node_cost, edge_cost = data["graph"], data["node_cost"], data["edge_cost"]
@@ -146,6 +149,7 @@ def find_low_error_region(data, size):
         raise RuntimeError("Falha ao encontrar região conectada de baixa taxa de erro.")
     return best[1], best[0]
 
+
 def bfs_region(graph, size, preferred_start):
     from collections import deque
 
@@ -168,6 +172,7 @@ def bfs_region(graph, size, preferred_start):
         if len(order) == size:
             return order
     raise RuntimeError("Não foi possível encontrar região BFS conectada.")
+
 
 def plot_topology(data, low_region, center_region, output):
     import matplotlib
@@ -210,6 +215,7 @@ def plot_topology(data, low_region, center_region, output):
     fig.tight_layout()
     fig.savefig(output, dpi=220, bbox_inches="tight")
     plt.close(fig)
+
 
 def write_calibration_files(backend, data, output):
     with (output / "calibracao_qubits.csv").open(

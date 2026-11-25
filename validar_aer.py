@@ -119,7 +119,6 @@ def prepare_compact_dag(circuit):
     return dag, active_physical, physical_to_compact, meta
 
 
-
 def make_compiled(backend, config_id: str):
     from qiskit import transpile
     from quantum import build_order_finding_circuit
