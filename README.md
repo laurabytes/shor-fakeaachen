@@ -87,7 +87,7 @@ A simulação Aer de E0 não foi concluída. Assim, ainda não há comparação 
 - **shor_quantum.py**: circuito de busca de ordem e simulação lógica NumPy.
 - **shor_classical.py**: rotinas clássicas de apoio, incluindo recuperação de ordem.
 - **shor_otimizado.py**: caracterização do backend, transpilação dos experimentos, métricas e gráficos.
-- **validacao_reduzida_fakeaachen.py**: validação lógica e auditoria estrutural E0/E3.
+- **validacao_reduzida_fakeaachen.py**: validação lógica, auditoria estrutural E0/E3 e leitura das contagens MPS E3 já salvas. Não inicia uma nova simulação Aer.
 - **validacao_aer_compacta_ruido.py**: validação compactada MPS com modelo ruidoso simplificado.
 - **resultados_fakeaachen/resultados.csv**: métricas completas dos experimentos.
 - **resultados_fakeaachen/backend_snapshot.json**, **calibracao_qubits.csv** e **calibracao_arestas.csv**: caracterização do snapshot.
@@ -140,4 +140,4 @@ Para regenerar a validação lógica e a auditoria estrutural:
 python validacao_reduzida_fakeaachen.py --shots 1024 --seed 42
 ~~~
 
-As simulações Aer compactadas são opcionais e podem consumir bastante tempo e memória. Os resultados MPS devem sempre ser apresentados junto dos parâmetros de bond dimension e truncamento, e não como resultados exatos.
+O argumento `--max-memory-mb` limita somente a estimativa de memória da simulação NumPy local; não configura um limite de memória do Aer. As simulações Aer compactadas são opcionais e podem consumir bastante tempo e memória. Os resultados MPS devem sempre ser apresentados junto dos parâmetros de bond dimension e truncamento, e não como resultados exatos.
