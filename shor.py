@@ -70,7 +70,7 @@ def preprocess(N: int, use_quantum: bool = False):
     from classical import is_prime, perfect_power_factors
 
     validate_N(N)
-    if N % 2 == 0:
+    if N > 2 and N % 2 == 0:
         return (2, N // 2), "divisão por 2"
     if not use_quantum:
         for p in SMALL_PRIMES:

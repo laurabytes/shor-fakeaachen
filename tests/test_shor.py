@@ -26,6 +26,12 @@ class TestShorLocal(unittest.TestCase):
             with self.subTest(module=name):
                 importlib.import_module(name)
 
+    def test_rejeita_numeros_primos(self):
+        for number in (2, 13):
+            with self.subTest(number=number):
+                with self.assertRaises(ValueError):
+                    factor(number, mode="local")
+
     def test_fatora_77_com_base_30(self):
         result = factor(
             77,
