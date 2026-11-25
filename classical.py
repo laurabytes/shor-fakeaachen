@@ -1,7 +1,7 @@
 """rotinas clássicas auxiliares para a implementação de shor fornecida."""
 from __future__ import annotations
 from fractions import Fraction
-from math import gcd, lcm
+from math import lcm
 
 
 def is_prime(n: int) -> bool:
