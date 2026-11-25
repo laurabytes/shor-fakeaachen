@@ -5,10 +5,9 @@ Executa a simulação ideal do circuito lógico de busca de ordem usando a
 implementação NumPy do projeto, recupera e verifica o período/fatores e
 consolida as métricas já medidas dos circuitos transpilados E0 e E3.
 
-IMPORTANTE: esta rotina NÃO simula os circuitos físicos transpilados E0/E3
-no Aer. Essa execução foi tentada, mas interrompida devido ao custo do circuito
-(156 fios físicos, >2 milhões de instruções). O relatório deixa essa limitação
-explícita; não atribui contagens simuladas a E0/E3.
+IMPORTANTE: esta rotina NÃO executa novas simulações Aer. Ela reproduz a
+simulação lógica ideal NumPy e audita as contagens MPS já salvas para E3,
+mantendo explícitas as limitações da aproximação.
 """
 from __future__ import annotations
 
@@ -105,8 +104,6 @@ def experiment_summary(row: dict[str, str], basis_ops: set[str]) -> dict:
     }
 
 
-
-
 def audit_mps_counts(csv_path: Path, recover_order) -> dict | None:
     """Resume contagens Aer já existentes sem executar uma nova simulação."""
     if not csv_path.exists():
@@ -136,8 +133,8 @@ def audit_mps_counts(csv_path: Path, recover_order) -> dict | None:
         "shots": shots,
         "distinct_outcomes": len(counts),
         "maximum_outcome_count": max(counts.values()),
-        "recovered_period": period,
         **validate_period_and_factors(period),
+        "recovered_period": period,
         "shots_within_one_count_bin_of_nearest_r30_peak": shots_near_ideal_peak,
         "fraction_within_one_count_bin_of_nearest_r30_peak": (
             shots_near_ideal_peak / shots if shots else None
@@ -147,6 +144,7 @@ def audit_mps_counts(csv_path: Path, recover_order) -> dict | None:
             "não constitui prova de equivalência nem estimativa da probabilidade de fatoração."
         ),
     }
+
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
