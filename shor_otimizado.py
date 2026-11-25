@@ -206,18 +206,18 @@ def _plot_topology(data, low_region, center_region, output):
     positions = nx.spring_layout(g, seed=42, iterations=80)
     low = set(low_region)
     center = set(center_region)
-    colors = ["#f29e4c" if q in low else "#54a6d8" if q in center else "#c8cdd3" for q in g.nodes]
+    colors = ["#C98CA5" if q in low else "#E9C6D4" if q in center else "#C9C4C9" for q in g.nodes]
     fig, ax = plt.subplots(figsize=(16, 13))
-    nx.draw_networkx_edges(g, positions, ax=ax, width=0.55, alpha=0.35)
+    nx.draw_networkx_edges(g, positions, ax=ax, width=0.55, alpha=0.42, edge_color="#D8D2D7")
     nx.draw_networkx_nodes(g, positions, node_size=24, node_color=colors, ax=ax)
     nx.draw_networkx_labels(g, positions, font_size=4, ax=ax)
     from matplotlib.patches import Patch
     ax.legend(handles=[
-        Patch(facecolor="#f29e4c", label="Região conectada: menor custo de calibração"),
-        Patch(facecolor="#54a6d8", label="Região BFS de referência central"),
-        Patch(facecolor="#c8cdd3", label="Demais qubits"),
-    ], loc="upper right", fontsize=8, framealpha=0.9)
-    ax.set_title("FakeAachen — mapa de conectividade (regiões candidatas destacadas)")
+        Patch(facecolor="#C98CA5", label="região conectada de menor custo"),
+        Patch(facecolor="#E9C6D4", label="região BFS central"),
+        Patch(facecolor="#C9C4C9", label="demais qubits"),
+    ], loc="upper right", fontsize=8, framealpha=0.94, edgecolor="#E7E1E5")
+    ax.set_title("fakeaachen · mapa de conectividade")
     ax.axis("off")
     fig.tight_layout()
     fig.savefig(output, dpi=220, bbox_inches="tight")
@@ -390,28 +390,40 @@ def _render_comparison_plots(rows, output):
         ("two_qubit_ops", "Operações de dois qubits", "operacoes_2q.png"),
         ("transpile_time_s", "Tempo de transpilação (s)", "tempo_transpilacao.png"),
     ]
+    bar_colors = ["#B87591" if label == "E3_L3_auto" else "#C9C4C9" for label in labels]
     for key, ylabel, filename in charts:
         values = [float(r[key]) for r in valid]
         fig, ax = plt.subplots(figsize=(12, 5))
-        ax.bar(range(len(labels)), values)
+        ax.bar(range(len(labels)), values, color=bar_colors, width=0.62, zorder=3)
         ax.set_xticks(range(len(labels)), labels, rotation=35, ha="right")
-        ax.set_ylabel(ylabel)
-        ax.set_title(ylabel + " por configuração")
-        ax.grid(axis="y", alpha=0.25)
+        ax.set_ylabel(ylabel.lower())
+        ax.set_title((ylabel + " por configuração").lower(), loc="left")
+        ax.grid(axis="y", color="#E7E1E5", linewidth=0.8, zorder=0)
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        ax.spines["left"].set_visible(False)
+        ax.spines["bottom"].set_color("#E7E1E5")
+        ax.tick_params(axis="both", length=0)
         fig.tight_layout()
-        fig.savefig(output / filename, dpi=180)
+        fig.savefig(output / filename, dpi=180, bbox_inches="tight")
         plt.close(fig)
     fidelity = [(r["experiment_id"], r.get("log10_fidelity_proxy_independent_errors")) for r in valid]
     fidelity = [(n, float(v)) for n, v in fidelity if v not in (None, "")]
     if fidelity:
         fig, ax = plt.subplots(figsize=(12, 5))
-        ax.bar(range(len(fidelity)), [v for _, v in fidelity])
+        proxy_colors = ["#B87591" if name == "E3_L3_auto" else "#C9C4C9" for name, _ in fidelity]
+        ax.bar(range(len(fidelity)), [v for _, v in fidelity], color=proxy_colors, width=0.62, zorder=3)
         ax.set_xticks(range(len(fidelity)), [n for n, _ in fidelity], rotation=35, ha="right")
         ax.set_ylabel("log10 da proxy multiplicativa (maior = melhor)")
-        ax.set_title("Proxy independente de erros em escala logarítmica")
-        ax.grid(axis="y", alpha=0.25)
+        ax.set_title("proxy independente de erros".lower(), loc="left")
+        ax.grid(axis="y", color="#E7E1E5", linewidth=0.8, zorder=0)
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        ax.spines["left"].set_visible(False)
+        ax.spines["bottom"].set_color("#E7E1E5")
+        ax.tick_params(axis="both", length=0)
         fig.tight_layout()
-        fig.savefig(output / "fidelidade_proxy.png", dpi=180)
+        fig.savefig(output / "fidelidade_proxy.png", dpi=180, bbox_inches="tight")
         plt.close(fig)
 
 
