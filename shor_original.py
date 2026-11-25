@@ -232,12 +232,17 @@ def etapa4_busca_quantica_de_ordem(
         return simulate_order_finding(N, a, shots=shots, seed=seed)
     if mode == "aer":
         from shor_backends import run_aer
-        return run_aer(circuit, shots=shots, seed=seed,
-                       max_memory_mb=max_memory_mb, progress=progress)
+        return run_aer(circuit, shots=shots, seed=seed, progress=progress)
     if mode == "fake":
         from shor_backends import run_fake
-        return run_fake(circuit, shots=shots, seed=seed, backend_name=backend_name,
-                        noise=fake_noise, max_memory_mb=max_memory_mb, progress=progress)
+        return run_fake(
+            circuit,
+            shots=shots,
+            seed=seed,
+            backend_name=backend_name,
+            noise=fake_noise,
+            progress=progress,
+        )
     return _run_ibm(N, a, shots, backend, seed, progress, circuit=circuit)
 
 
