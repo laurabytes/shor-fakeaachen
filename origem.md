@@ -1,12 +1,14 @@
 # origem dos arquivos
 
-- `shor.py` e `quantum.py`: derivados dos blocos de código fornecidos no material da disciplina. a estrutura das etapas e a implementação lógica foram preservadas; ajustes pontuais de importação e documentação foram realizados.
-- `classical.py`, `backends.py` e `resources.py`: módulos auxiliares criados para apoiar o pós-processamento, os executores de simulação e as verificações de recursos. não são apresentados como arquivos originais do professor.
-- `otimizar.py`: script desenvolvido para caracterizar o FakeAachen e comparar níveis de otimização, métodos de layout e roteamento.
-- `validar.py` e `validar_aer.py`: scripts de validação e auditoria associados aos resultados experimentais.
+- `quantum.py`: circuito lógico derivado do código-base fornecido na disciplina. A implementação matemática foi preservada.
+- `shor.py`: organiza as etapas didáticas da fatoração e conecta o circuito aos simuladores.
+- `classical.py`, `backends.py` e `resources.py`: funções auxiliares de pós-processamento, execução e memória.
+- `backend.py`, `metricas.py` e `graficos.py`: análise do snapshot, métricas de transpilação e visualização.
+- `otimizar.py`: compara os níveis de otimização, layouts e roteamentos.
+- `validar.py`, `ruido.py` e `validar_aer.py`: validação lógica, modelo de ruído e simulação MPS compactada.
 
-## instância usada
+## instância
 
-o estudo foi fixado em N=77 e a=30. na execução de seleção com seed 42, a base 16 produziu ordem 15, que não permitiu extrair fatores. a base 30 produziu ordem 30 e os fatores 7 e 11. por isso, a mesma base válida foi usada em todas as comparações de transpilação.
+O estudo usa N=77 e a=30. A mesma instância matemática e o mesmo circuito lógico são mantidos entre as configurações de transpilação. Na seleção inicial com seed 42, a base 16 produziu ordem 15, que não permitiu extrair fatores. A base 30 produziu ordem 30 e os fatores 7 e 11.
 
-as alterações de organização e nome dos arquivos não têm o objetivo de modificar o circuito lógico do material-base.
+Os resultados já registrados não foram recalculados durante a reorganização dos arquivos.

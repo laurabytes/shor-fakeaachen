@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - refactor/documentacao-e-validacao
   pull_request:
     branches:
       - main

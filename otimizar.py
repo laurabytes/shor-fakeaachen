@@ -1,20 +1,4 @@
-"""investigação de transpilação de shor em fakeaachen (heron r3).
-
-o circuito lógico é importado de quantum.py, material disponibilizado
-como código-base do professor. este script não altera n nem a implementação
-lógica; varia apenas layout, roteamento e optimization_level.
-
-uso:
-    python otimizar.py
-    python otimizar.py --shots 2048 --seed 42
-    python otimizar.py --skip-experiment e5_dense_basic
-
-cada linha do csv é salva imediatamente após a transpilação. a coleta de métricas
-é incremental e os desenhos transpilados mostram apenas um prefixo para evitar
-consumo excessivo de memória em circuitos com milhões de instruções.
-
-os resultados são gravados apenas após execução efetiva do qiskit.
-"""
+"""executa e compara as configurações de transpilação do circuito de shor."""
 
 from __future__ import annotations
 
@@ -26,421 +10,33 @@ import math
 import platform
 import statistics
 import time
-from collections import defaultdict
+from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 
+from backend import (
+    bfs_region,
+    collect_backend_data,
+    find_low_error_region,
+    plot_topology,
+    write_calibration_files,
+)
+from graficos import render_comparison_plots, write_report
+from metricas import collect_circuit_metrics, write_circuit_preview
+
 N = 77
-A = 30  # segunda base da busca reproduzível do código-base com seed=42.
-SEED_TRANSPILER = 42
+A = 30
+SEED = 42
 OUTPUT = Path(__file__).resolve().parent / "resultados"
 
 
-def _version(package: str) -> str:
-    from importlib.metadata import version, PackageNotFoundError
-
+def package_version(name: str) -> str:
     try:
-        return version(package)
+        return version(name)
     except PackageNotFoundError:
-        return "not-installed"
+        return "não instalado"
 
 
-def _target_error(backend, name: str, qargs: tuple[int, ...]):
-    try:
-        properties = backend.target[name].get(tuple(qargs))
-        if properties is not None and properties.error is not None:
-            return float(properties.error)
-    except Exception:
-        pass
-    try:
-        backend_properties = backend.properties()
-        if backend_properties is not None:
-            value = backend_properties.gate_error(name, list(qargs))
-            if value is not None:
-                return float(value)
-    except Exception:
-        pass
-    return None
-
-
-def _collect_backend_data(backend):
-    edges_directed = list(backend.coupling_map.get_edges())
-    edges = sorted(
-        {tuple(sorted((int(u), int(v)))) for u, v in edges_directed if u != v}
-    )
-    graph = {q: set() for q in range(backend.num_qubits)}
-    for u, v in edges:
-        graph[u].add(v)
-        graph[v].add(u)
-
-    twoq_errors = {}
-    oneq_errors = defaultdict(list)
-    readout_errors = {}
-    operation_names = list(backend.operation_names)
-    for name in operation_names:
-        try:
-            qarg_map = backend.target[name]
-        except Exception:
-            continue
-        for qargs, inst_props in qarg_map.items():
-            if qargs is None or inst_props is None or inst_props.error is None:
-                continue
-            qargs = tuple(int(q) for q in qargs)
-            err = float(inst_props.error)
-            if len(qargs) == 1:
-                q = qargs[0]
-                if name == "measure":
-                    readout_errors[q] = err
-                elif name not in {"reset", "delay", "barrier"}:
-                    oneq_errors[q].append(err)
-            elif len(qargs) == 2:
-                edge = tuple(sorted(qargs))
-                twoq_errors[edge] = min(twoq_errors.get(edge, 1.0), err)
-
-    t1, t2 = {}, {}
-    for q in range(backend.num_qubits):
-        try:
-            qp = backend.qubit_properties(q)
-            if qp is not None:
-                t1[q] = float(qp.t1) if qp.t1 is not None else None
-                t2[q] = float(qp.t2) if qp.t2 is not None else None
-        except Exception:
-            t1[q] = t2[q] = None
-
-    known2 = list(twoq_errors.values())
-    known_ro = list(readout_errors.values())
-    known1 = [x for arr in oneq_errors.values() for x in arr]
-    default2 = statistics.median(known2) if known2 else 0.02
-    default_ro = statistics.median(known_ro) if known_ro else 0.02
-    default1 = statistics.median(known1) if known1 else 0.005
-
-    node_cost = {}
-    for q in graph:
-        ro = readout_errors.get(q, default_ro)
-        one = statistics.mean(oneq_errors[q]) if oneq_errors[q] else default1
-        node_cost[q] = 0.65 * ro + 0.35 * one
-
-    def edge_cost(u, v):
-        return twoq_errors.get(tuple(sorted((u, v))), default2)
-
-    return {
-        "edges": edges,
-        "graph": graph,
-        "twoq_errors": twoq_errors,
-        "oneq_errors": oneq_errors,
-        "readout_errors": readout_errors,
-        "t1": t1,
-        "t2": t2,
-        "node_cost": node_cost,
-        "edge_cost": edge_cost,
-        "operation_names": operation_names,
-        "default_2q_error": default2,
-    }
-
-
-def _connected_greedy_region(graph, node_cost, edge_cost, size, start):
-    selected = [start]
-    selected_set = {start}
-    while len(selected) < size:
-        frontier = set()
-        for u in selected:
-            frontier.update(graph[u] - selected_set)
-        if not frontier:
-            raise RuntimeError(
-                "Não foi possível construir um subgrafo conectado com 21 qubits."
-            )
-        scored = []
-        for candidate in frontier:
-            links = [edge_cost(candidate, u) for u in selected if candidate in graph[u]]
-            # prioriza calibração do qubit e arestas de menor erro; um pequeno
-            # bônus favorece um candidato com mais de uma conexão ao conjunto.
-            score = node_cost[candidate] + statistics.mean(links) - 0.00015 * len(links)
-            scored.append((score, candidate))
-        _, chosen = min(scored)
-        selected.append(chosen)
-        selected_set.add(chosen)
-    return selected
-
-
-def _find_low_error_region(data, size):
-    graph, node_cost, edge_cost = data["graph"], data["node_cost"], data["edge_cost"]
-    best = None
-    for start in graph:
-        try:
-            region = _connected_greedy_region(graph, node_cost, edge_cost, size, start)
-        except RuntimeError:
-            continue
-        region_edges = [
-            edge_cost(u, v)
-            for i, u in enumerate(region)
-            for v in region[i + 1 :]
-            if v in graph[u]
-        ]
-        score = statistics.mean(node_cost[q] for q in region) + (
-            statistics.mean(region_edges) if region_edges else 1.0
-        )
-        candidate = (score, region)
-        if best is None or candidate[0] < best[0]:
-            best = candidate
-    if best is None:
-        raise RuntimeError("Falha ao encontrar região conectada de baixa taxa de erro.")
-    return best[1], best[0]
-
-
-def _bfs_region(graph, size, preferred_start):
-    from collections import deque
-
-    starts = [preferred_start] + sorted(
-        graph, key=lambda q: (-len(graph[q]), abs(q - preferred_start))
-    )
-    for start in starts:
-        seen = {start}
-        order = [start]
-        queue = deque([start])
-        while queue and len(order) < size:
-            u = queue.popleft()
-            for v in sorted(graph[u]):
-                if v not in seen:
-                    seen.add(v)
-                    order.append(v)
-                    queue.append(v)
-                    if len(order) == size:
-                        break
-        if len(order) == size:
-            return order
-    raise RuntimeError("Não foi possível encontrar região BFS conectada.")
-
-
-def _plot_topology(data, low_region, center_region, output):
-    import matplotlib
-
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
-    import networkx as nx
-
-    g = nx.Graph()
-    g.add_nodes_from(data["graph"])
-    g.add_edges_from(data["edges"])
-    positions = nx.spring_layout(g, seed=42, iterations=80)
-    low = set(low_region)
-    center = set(center_region)
-    colors = [
-        "#C98CA5" if q in low else "#E9C6D4" if q in center else "#C9C4C9"
-        for q in g.nodes
-    ]
-    fig, ax = plt.subplots(figsize=(16, 13))
-    nx.draw_networkx_edges(
-        g, positions, ax=ax, width=0.55, alpha=0.42, edge_color="#D8D2D7"
-    )
-    nx.draw_networkx_nodes(g, positions, node_size=24, node_color=colors, ax=ax)
-    nx.draw_networkx_labels(g, positions, font_size=4, ax=ax)
-    from matplotlib.patches import Patch
-
-    ax.legend(
-        handles=[
-            Patch(facecolor="#C98CA5", label="região conectada de menor custo"),
-            Patch(facecolor="#E9C6D4", label="região BFS central"),
-            Patch(facecolor="#C9C4C9", label="demais qubits"),
-        ],
-        loc="upper right",
-        fontsize=8,
-        framealpha=0.94,
-        edgecolor="#E7E1E5",
-    )
-    ax.set_title("fakeaachen · mapa de conectividade")
-    ax.axis("off")
-    fig.tight_layout()
-    fig.savefig(output, dpi=220, bbox_inches="tight")
-    plt.close(fig)
-
-
-def _write_calibration_files(backend, data, output):
-    with (output / "calibracao_qubits.csv").open(
-        "w", newline="", encoding="utf-8"
-    ) as f:
-        writer = csv.writer(f)
-        writer.writerow(
-            [
-                "physical_qubit",
-                "degree",
-                "readout_error",
-                "mean_1q_error",
-                "T1_s",
-                "T2_s",
-            ]
-        )
-        for q in range(backend.num_qubits):
-            vals = data["oneq_errors"][q]
-            writer.writerow(
-                [
-                    q,
-                    len(data["graph"][q]),
-                    data["readout_errors"].get(q),
-                    statistics.mean(vals) if vals else None,
-                    data["t1"].get(q),
-                    data["t2"].get(q),
-                ]
-            )
-    with (output / "calibracao_arestas.csv").open(
-        "w", newline="", encoding="utf-8"
-    ) as f:
-        writer = csv.writer(f)
-        writer.writerow(
-            ["physical_qubit_u", "physical_qubit_v", "two_qubit_error_min_available"]
-        )
-        for (u, v), err in sorted(data["twoq_errors"].items()):
-            writer.writerow([u, v, err])
-    calibration = {
-        "backend_name": backend.name,
-        "backend_class": type(backend).__name__,
-        "num_qubits": backend.num_qubits,
-        "coupling_edges_undirected": len(data["edges"]),
-        "basis_operation_names": data["operation_names"],
-        "median_2q_error_over_available_native_edges": statistics.median(
-            data["twoq_errors"].values()
-        )
-        if data["twoq_errors"]
-        else None,
-        "median_readout_error": statistics.median(data["readout_errors"].values())
-        if data["readout_errors"]
-        else None,
-        "median_1q_gate_error": statistics.median(
-            [x for a in data["oneq_errors"].values() for x in a]
-        )
-        if any(data["oneq_errors"].values())
-        else None,
-        "median_T1_s": statistics.median(
-            [x for x in data["t1"].values() if x is not None]
-        )
-        if any(x is not None for x in data["t1"].values())
-        else None,
-        "median_T2_s": statistics.median(
-            [x for x in data["t2"].values() if x is not None]
-        )
-        if any(x is not None for x in data["t2"].values())
-        else None,
-        "note": "Valores provenientes do snapshot local do FakeProvider; não são calibração em tempo real.",
-    }
-    (output / "backend_snapshot.json").write_text(
-        json.dumps(calibration, indent=2, ensure_ascii=False), encoding="utf-8"
-    )
-
-
-def _layout_maps(compiled, logical_circuit):
-    initial_map, final_map = [], []
-    layout = getattr(compiled, "layout", None)
-    if layout is None:
-        return initial_map, final_map
-    initial = getattr(layout, "initial_layout", None)
-    if initial is not None:
-        for i, q in enumerate(logical_circuit.qubits):
-            try:
-                initial_map.append({"logical": i, "physical": int(initial[q])})
-            except Exception:
-                pass
-    try:
-        final_indices = layout.final_index_layout(filter_ancillas=True)
-        final_map = [
-            {"logical_or_virtual_index": i, "physical": int(p)}
-            for i, p in enumerate(final_indices)
-        ]
-    except Exception:
-        final = getattr(layout, "final_layout", None)
-        if final is not None:
-            try:
-                for q, p in final.get_virtual_bits().items():
-                    final_map.append({"virtual": str(q), "physical": int(p)})
-            except Exception:
-                pass
-    return initial_map, final_map
-
-
-def _instruction_error_map(backend, operation_name, physical_qargs):
-    return _target_error(backend, operation_name, tuple(physical_qargs))
-
-
-def _collect_circuit_metrics(compiled, logical_circuit, backend):
-    """coleta métricas em fluxo, sem criar listas com milhões de erros."""
-    ops = dict(compiled.count_ops())
-    twoq = 0
-    used_physical = set()
-    n_errors = 0
-    log_survival_sum = 0.0
-    one_error_sum = one_error_n = 0
-    two_error_sum = two_error_n = 0
-    read_error_sum = read_error_n = 0
-
-    for item in compiled.data:
-        name = item.operation.name
-        if name == "barrier":
-            continue
-        qargs = [compiled.find_bit(q).index for q in item.qubits]
-        used_physical.update(qargs)
-        if len(qargs) == 2:
-            twoq += 1
-        err = _instruction_error_map(backend, name, qargs)
-        if err is not None and 0 <= err < 1:
-            n_errors += 1
-            log_survival_sum += math.log1p(-err)
-            if name == "measure":
-                read_error_sum += err
-                read_error_n += 1
-            elif len(qargs) == 1:
-                one_error_sum += err
-                one_error_n += 1
-            elif len(qargs) == 2:
-                two_error_sum += err
-                two_error_n += 1
-
-    fidelity_proxy = math.exp(log_survival_sum) if n_errors else None
-    # o produto pode sofrer underflow após milhões de instruções. nesse caso,
-    # o log continua sendo a métrica comparável; não grave zero como se fosse
-    # uma estimativa física exata.
-    if fidelity_proxy == 0.0:
-        fidelity_proxy = None
-    initial_map, final_map = _layout_maps(compiled, logical_circuit)
-    return {
-        "depth": compiled.depth(),
-        "total_ops": compiled.size(),
-        "two_qubit_ops": twoq,
-        "swap_count_after_translation": ops.get("swap", 0),
-        "num_qubits_output": compiled.num_qubits,
-        "unique_physical_qubits_used": len(used_physical),
-        "physical_qubits_used_json": json.dumps(sorted(used_physical)),
-        "native_gate_counts_json": json.dumps(ops, ensure_ascii=False, sort_keys=True),
-        "initial_layout_json": json.dumps(initial_map, ensure_ascii=False),
-        "final_layout_json": json.dumps(final_map, ensure_ascii=False),
-        "mean_1q_error_used": one_error_sum / one_error_n if one_error_n else None,
-        "mean_2q_error_used": two_error_sum / two_error_n if two_error_n else None,
-        "mean_readout_error_used": read_error_sum / read_error_n
-        if read_error_n
-        else None,
-        "n_instruction_errors_in_proxy": n_errors,
-        # guarda o log da proxy para evitar underflow numérico em produtos muito pequenos.
-        "log_fidelity_proxy_independent_errors": log_survival_sum if n_errors else None,
-        "log10_fidelity_proxy_independent_errors": (log_survival_sum / math.log(10))
-        if n_errors
-        else None,
-        "fidelity_proxy_independent_errors": fidelity_proxy,
-    }
-
-
-def _write_circuit_preview(compiled, path, max_instructions=80):
-    """salva um prefixo legível; evita desenhar milhões de instruções em texto."""
-    preview = compiled.copy_empty_like()
-    for item in compiled.data[:max_instructions]:
-        preview.append(item.operation, item.qubits, item.clbits)
-    header = (
-        f"PRÉVIA DO CIRCUITO TRANSPILADO: primeiras {min(max_instructions, compiled.size())} "
-        f"instruções de {compiled.size()} no total.\n"
-        "Este desenho é apenas um prefixo ilustrativo; as métricas completas estão em resultados.csv.\n\n"
-    )
-    Path(path).write_text(
-        header + str(preview.draw(output="text", fold=120)), encoding="utf-8"
-    )
-    del preview
-
-
-def _make_experiments(low_region, center_region):
+def make_experiments(low_region, center_region):
     return [
         {
             "id": "E0_reference_L1_auto",
@@ -500,129 +96,9 @@ def _make_experiments(low_region, center_region):
     ]
 
 
-def _render_comparison_plots(rows, output):
-    import matplotlib
-
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
-
-    valid = [r for r in rows if r.get("status") == "ok"]
-    if not valid:
-        return
-    labels = [r["experiment_id"] for r in valid]
-    charts = [
-        ("depth", "Profundidade", "profundidade.png"),
-        ("total_ops", "Número total de operações", "operacoes_totais.png"),
-        ("two_qubit_ops", "Operações de dois qubits", "operacoes_2q.png"),
-        ("transpile_time_s", "Tempo de transpilação (s)", "tempo_transpilacao.png"),
-    ]
-    bar_colors = ["#B87591" if label == "E3_L3_auto" else "#C9C4C9" for label in labels]
-    for key, ylabel, filename in charts:
-        values = [float(r[key]) for r in valid]
-        fig, ax = plt.subplots(figsize=(12, 5))
-        ax.bar(range(len(labels)), values, color=bar_colors, width=0.62, zorder=3)
-        ax.set_xticks(range(len(labels)), labels, rotation=35, ha="right")
-        ax.set_ylabel(ylabel.lower())
-        ax.set_title((ylabel + " por configuração").lower(), loc="left")
-        ax.grid(axis="y", color="#E7E1E5", linewidth=0.8, zorder=0)
-        ax.spines["top"].set_visible(False)
-        ax.spines["right"].set_visible(False)
-        ax.spines["left"].set_visible(False)
-        ax.spines["bottom"].set_color("#E7E1E5")
-        ax.tick_params(axis="both", length=0)
-        fig.tight_layout()
-        fig.savefig(output / filename, dpi=180, bbox_inches="tight")
-        plt.close(fig)
-    fidelity = [
-        (r["experiment_id"], r.get("log10_fidelity_proxy_independent_errors"))
-        for r in valid
-    ]
-    fidelity = [(n, float(v)) for n, v in fidelity if v not in (None, "")]
-    if fidelity:
-        fig, ax = plt.subplots(figsize=(12, 5))
-        proxy_colors = [
-            "#B87591" if name == "E3_L3_auto" else "#C9C4C9" for name, _ in fidelity
-        ]
-        ax.bar(
-            range(len(fidelity)),
-            [v for _, v in fidelity],
-            color=proxy_colors,
-            width=0.62,
-            zorder=3,
-        )
-        ax.set_xticks(
-            range(len(fidelity)), [n for n, _ in fidelity], rotation=35, ha="right"
-        )
-        ax.set_ylabel("log10 da proxy multiplicativa (maior = melhor)")
-        ax.set_title("proxy independente de erros".lower(), loc="left")
-        ax.grid(axis="y", color="#E7E1E5", linewidth=0.8, zorder=0)
-        ax.spines["top"].set_visible(False)
-        ax.spines["right"].set_visible(False)
-        ax.spines["left"].set_visible(False)
-        ax.spines["bottom"].set_color("#E7E1E5")
-        ax.tick_params(axis="both", length=0)
-        fig.tight_layout()
-        fig.savefig(output / "fidelidade_proxy.png", dpi=180, bbox_inches="tight")
-        plt.close(fig)
-
-
-def _write_report(rows, backend_info, output, N, a, seed):
-    """grava um resumo curto da execução, sem campos para preenchimento manual."""
-    columns = (
-        "experimento",
-        "status",
-        "profundidade",
-        "operações",
-        "operações 2q",
-        "tempo (s)",
-        "log10(proxy)",
-    )
-    lines = [
-        "# resumo da execução",
-        "",
-        f"- backend: {backend_info.get('backend_name', 'FakeAachen')}",
-        f"- qubits físicos: {backend_info.get('num_qubits', '—')}",
-        f"- instância: N={N}, a={a}",
-        f"- seed do transpiler: {seed}",
-        "",
-        "| " + " | ".join(columns) + " |",
-        "|---|---:|---:|---:|---:|---:|---:|",
-    ]
-    for row in rows:
-        proxy = row.get("log10_fidelity_proxy_independent_errors")
-        proxy_text = f"{float(proxy):.3f}" if proxy not in (None, "") else "—"
-        values = (
-            row.get("experiment_id", "—"),
-            row.get("status", "—"),
-            row.get("depth") or "—",
-            row.get("total_ops") or "—",
-            row.get("two_qubit_ops") or "—",
-            f"{float(row['transpile_time_s']):.2f}"
-            if row.get("transpile_time_s")
-            else "—",
-            proxy_text,
-        )
-        lines.append("| " + " | ".join(str(value) for value in values) + " |")
-    lines += [
-        "",
-        "os dados completos estão em `resultados.csv`.",
-        "a análise e as limitações estão em `../relatorio.md`.",
-        "E5 permanece registrado como pulado porque não produziu métricas.",
-    ]
-    (output / "resumo_execucao.md").write_text(
-        "\n".join(lines) + "\n", encoding="utf-8"
-    )
-
-
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--shots",
-        type=int,
-        default=32,
-        help="shots por circuito/configuração na validação (padrão conservador: 32)",
-    )
-    parser.add_argument("--seed", type=int, default=SEED_TRANSPILER)
+    parser.add_argument("--seed", type=int, default=SEED)
     parser.add_argument("--output", type=Path, default=OUTPUT)
     parser.add_argument(
         "--skip-experiment",
@@ -634,11 +110,6 @@ def main():
         "--resume",
         action="store_true",
         help="reaproveita linhas status=ok já gravadas no CSV e continua os experimentos pendentes",
-    )
-    parser.add_argument(
-        "--validate",
-        action="store_true",
-        help="compara E0 e a configuração recomendada em simulação ideal e com ruído FakeAachen; pode consumir bastante tempo",
     )
     args = parser.parse_args()
 
@@ -669,13 +140,13 @@ def main():
         circuit.draw(output="text", fold=120).__str__(), encoding="utf-8"
     )
 
-    data = _collect_backend_data(backend)
-    low_region, low_score = _find_low_error_region(data, circuit.num_qubits)
-    center_region = _bfs_region(
+    data = collect_backend_data(backend)
+    low_region, low_score = find_low_error_region(data, circuit.num_qubits)
+    center_region = bfs_region(
         data["graph"], circuit.num_qubits, backend.num_qubits // 2
     )
-    _write_calibration_files(backend, data, args.output)
-    _plot_topology(
+    write_calibration_files(backend, data, args.output)
+    plot_topology(
         data, low_region, center_region, args.output / "topologia_fakeaachen.png"
     )
     (args.output / "regioes_qubits.json").write_text(
@@ -691,7 +162,7 @@ def main():
         encoding="utf-8",
     )
 
-    experiment_specs = _make_experiments(low_region, center_region)
+    experiment_specs = make_experiments(low_region, center_region)
     rows = []
     columns = None
     csv_path = args.output / "resultados.csv"
@@ -791,7 +262,7 @@ def main():
                 f"[{spec['id']}] etapa 2/3: transpile concluída em {elapsed:.2f}s; coletando métricas em fluxo.",
                 flush=True,
             )
-            metrics = _collect_circuit_metrics(compiled, circuit, backend)
+            metrics = collect_circuit_metrics(compiled, circuit, backend)
             print(
                 f"[{spec['id']}] etapa 3/3: métricas coletadas; salvando resultado.",
                 flush=True,
@@ -803,7 +274,7 @@ def main():
             # guardar somente a referência imediatamente. os demais circuitos
             # são liberados e o recomendado será recompilado uma única vez ao final.
             if spec["id"] == "E0_reference_L1_auto":
-                _write_circuit_preview(
+                write_circuit_preview(
                     compiled,
                     args.output / "circuito_referencia.txt",
                     max_instructions=80,
@@ -872,7 +343,7 @@ def main():
             f"\nRecompilando apenas a configuração recomendada: {best_id}", flush=True
         )
         best_circuit = transpile(circuit, **transpile_kwargs(best_spec))
-        _write_circuit_preview(
+        write_circuit_preview(
             best_circuit, args.output / "circuito_recomendado.txt", max_instructions=80
         )
         (args.output / "configuracao_recomendada.json").write_text(
@@ -888,18 +359,17 @@ def main():
             encoding="utf-8",
         )
         # mantém a referência em memória apenas quando a validação opcional foi pedida.
-        if not args.validate:
-            del best_circuit
+        del best_circuit
         gc.collect()
 
-    _render_comparison_plots(rows, args.output)
+    render_comparison_plots(rows, args.output)
     backend_info = {
         "name": backend.name,
         "num_qubits": backend.num_qubits,
         "operation_names": list(backend.operation_names),
         "coupling_edges": len(data["edges"]),
     }
-    _write_report(rows, backend_info, args.output, N, A, args.seed)
+    write_report(rows, backend_info, args.output, N, A, args.seed)
     versions = {
         "python": platform.python_version(),
         "qiskit": _version("qiskit"),
@@ -916,188 +386,8 @@ def main():
     print(f"Configuração multicritério indicativa: {best_id or 'nenhuma'}")
     print(f"Resultados em: {args.output}")
 
-    if args.validate and best_id:
-        print(
-            "\nValidação comparativa: circuito lógico (evidência ideal existente), E0 e configuração recomendada.",
-            flush=True,
-        )
-        validation = {
-            "N": N,
-            "base_a": A,
-            "shots_transpiled_circuits": args.shots,
-            "seed_simulator": args.seed,
-            "backend": backend.name,
-            "method": "matrix_product_state",
-            "logical_original_ideal_evidence": None,
-            "compiled_circuits": {},
-            "warning": (
-                "FakeAachen é um snapshot de backend, não uma QPU física. "
-                "A validação ruidosa representa apenas o modelo de ruído disponibilizado pelo snapshot."
-            ),
-        }
-        validation_path = args.output / "validacao_counts.json"
-
-        # o circuito lógico original já foi executado no simulador numpy local
-        # (1024 shots); reutilizamos a evidência gravada para não repetir essa etapa.
-        logical_evidence_path = Path("evidencia_local_N77_a30.json")
-        if logical_evidence_path.exists():
-            try:
-                evidence = json.loads(logical_evidence_path.read_text(encoding="utf-8"))
-                validation["logical_original_ideal_evidence"] = {
-                    "source_file": str(logical_evidence_path),
-                    "method": evidence.get("method"),
-                    "shots": sum((evidence.get("counts") or {}).values()),
-                    "recovered_period": evidence.get("period"),
-                    "recovered_factors": evidence.get("factors"),
-                    "counts": evidence.get("counts"),
-                }
-            except Exception as exc:
-                validation["logical_original_ideal_evidence_error"] = (
-                    f"{type(exc).__name__}: {exc}"
-                )
-        else:
-            validation["logical_original_ideal_evidence_error"] = (
-                "evidencia_local_N77_a30.json não encontrado no diretório de execução. "
-                "A evidência lógica ideal local deverá ser anexada separadamente."
-            )
-
-        try:
-            from qiskit_aer import AerSimulator
-            from shor import etapa5_validar_periodo, etapa6_extrair_fatores
-            from classical import recover_order
-
-            def summarize_counts(counts):
-                normalized = {str(k): int(v) for k, v in counts.items()}
-                period = recover_order(normalized, N, A, 2 * (N - 1).bit_length())
-                x = etapa5_validar_periodo(N, A, period) if period else None
-                factors = etapa6_extrair_fatores(N, x) if x is not None else None
-                valid_factors = None
-                if factors and len(factors) == 2 and factors[0] * factors[1] == N:
-                    valid_factors = [int(factors[0]), int(factors[1])]
-                top_counts = sorted(
-                    normalized.items(), key=lambda kv: kv[1], reverse=True
-                )[:20]
-                return {
-                    "shots": sum(normalized.values()),
-                    "distinct_outcomes": len(normalized),
-                    "top_20_counts": dict(top_counts),
-                    "recovered_period": period,
-                    "recovered_factors": valid_factors,
-                    "factorization_success_in_postprocessing": valid_factors
-                    is not None,
-                    "all_counts": normalized,
-                }
-
-            def run_one(simulator, qc, label, mode):
-                result = simulator.run(
-                    qc, shots=args.shots, seed_simulator=args.seed
-                ).result()
-                counts = result.get_counts(qc)
-                if isinstance(counts, list):
-                    counts = counts[0]
-                return summarize_counts(counts)
-
-            def tv_distance(a_counts, b_counts):
-                a_total = sum(a_counts.values())
-                b_total = sum(b_counts.values())
-                if not a_total or not b_total:
-                    return None
-                keys = set(a_counts) | set(b_counts)
-                return 0.5 * sum(
-                    abs(a_counts.get(k, 0) / a_total - b_counts.get(k, 0) / b_total)
-                    for k in keys
-                )
-
-            reference_spec = next(
-                spec
-                for spec in experiment_specs
-                if spec["id"] == "E0_reference_L1_auto"
-            )
-            # processa um circuito por vez para reduzir o pico de memória.
-            for config_id in ("E0_reference_L1_auto", best_id):
-                if config_id == "E0_reference_L1_auto":
-                    qc = transpile(circuit, **transpile_kwargs(reference_spec))
-                else:
-                    qc = best_circuit
-                print(
-                    f"\nValidação de {config_id}: circuito com {qc.num_qubits} qubits e {qc.size()} instruções.",
-                    flush=True,
-                )
-                entry = {
-                    "num_qubits": qc.num_qubits,
-                    "instructions": qc.size(),
-                    "ideal_no_noise": None,
-                    "fakeaachen_snapshot_noise": None,
-                }
-                try:
-                    ideal_sim = AerSimulator(method="matrix_product_state")
-                    ideal_summary = run_one(ideal_sim, qc, config_id, "ideal")
-                    entry["ideal_no_noise"] = ideal_summary
-                    print(
-                        f"{config_id} ideal: período={ideal_summary['recovered_period']} "
-                        f"fatores={ideal_summary['recovered_factors']}",
-                        flush=True,
-                    )
-                except Exception as exc:
-                    entry["ideal_error"] = f"{type(exc).__name__}: {exc}"
-                    print(
-                        f"{config_id} ideal não concluído: {entry['ideal_error']}",
-                        flush=True,
-                    )
-
-                try:
-                    noisy_sim = AerSimulator.from_backend(
-                        backend, method="matrix_product_state"
-                    )
-                    noisy_summary = run_one(noisy_sim, qc, config_id, "noisy")
-                    entry["fakeaachen_snapshot_noise"] = noisy_summary
-                    print(
-                        f"{config_id} ruidoso: período={noisy_summary['recovered_period']} "
-                        f"fatores={noisy_summary['recovered_factors']}",
-                        flush=True,
-                    )
-                except Exception as exc:
-                    entry["noisy_error"] = f"{type(exc).__name__}: {exc}"
-                    print(
-                        f"{config_id} ruidoso não concluído: {entry['noisy_error']}",
-                        flush=True,
-                    )
-
-                if entry.get("ideal_no_noise") and entry.get(
-                    "fakeaachen_snapshot_noise"
-                ):
-                    entry["total_variation_distance_ideal_vs_noisy"] = tv_distance(
-                        entry["ideal_no_noise"]["all_counts"],
-                        entry["fakeaachen_snapshot_noise"]["all_counts"],
-                    )
-                validation["compiled_circuits"][config_id] = entry
-                validation_path.write_text(
-                    json.dumps(validation, indent=2, ensure_ascii=False),
-                    encoding="utf-8",
-                )
-                if config_id == "E0_reference_L1_auto":
-                    del qc
-                    gc.collect()
-
-            # reforça o registro da validação mesmo quando cada modo falha separadamente.
-            validation_path.write_text(
-                json.dumps(validation, indent=2, ensure_ascii=False), encoding="utf-8"
-            )
-            print(
-                f"Validação comparativa concluída ou registrada com limitações: {validation_path}",
-                flush=True,
-            )
-        except Exception as exc:
-            validation["validation_setup_error"] = f"{type(exc).__name__}: {exc}"
-            validation_path.write_text(
-                json.dumps(validation, indent=2, ensure_ascii=False), encoding="utf-8"
-            )
-            (args.output / "validacao_erro.txt").write_text(
-                f"{type(exc).__name__}: {exc}\n", encoding="utf-8"
-            )
-            print(f"Validação não concluída: {type(exc).__name__}: {exc}", flush=True)
-
     return 0
+
 
 
 if __name__ == "__main__":
