@@ -718,7 +718,7 @@ def main():
 
         try:
             from qiskit_aer import AerSimulator
-            from shor_original import etapa5_validar_periodo, etapa6_extrair_fatores
+            from shor import etapa5_validar_periodo, etapa6_extrair_fatores
             from classical import recover_order
 
             def summarize_counts(counts):
