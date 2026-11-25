@@ -135,7 +135,6 @@ def audit_mps_counts(csv_path: Path, recover_order) -> dict | None:
         "distinct_outcomes": len(counts),
         "maximum_outcome_count": max(counts.values()),
         **validate_period_and_factors(period),
-        "recovered_period": period,
         "shots_within_one_count_bin_of_nearest_r30_peak": shots_near_ideal_peak,
         "fraction_within_one_count_bin_of_nearest_r30_peak": (
             shots_near_ideal_peak / shots if shots else None
