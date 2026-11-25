@@ -8,8 +8,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import logging
-import os
 import random
 import sys
 from dataclasses import asdict, dataclass, field
@@ -17,6 +15,7 @@ from fractions import Fraction
 from math import gcd
 from pathlib import Path
 
+from backends import get_ibm_backend, run_ibm
 from resources import check_resources, hardware_info, memory_budget_mb
 
 # numeração didática explícita. a correspondência com slides específicos deve
@@ -189,71 +188,6 @@ def etapa6_extrair_fatores(N, x):
     return None
 
 
-def _silence_ibm_runtime_warnings():
-    """oculta avisos informativos do ibm runtime, preservando erros reais."""
-    logger_names = (
-        "qiskit_ibm_runtime",
-        "qiskit_ibm_runtime.qiskit_runtime_service",
-        "qiskit_runtime_service",
-        "qiskit_runtime_service._discover_account",
-        "qiskit_runtime_service.__init__",
-        "qiskit_runtime_service.backends",
-    )
-    for name in logger_names:
-        logging.getLogger(name).setLevel(logging.ERROR)
-
-    # algumas versões do qiskit-ibm-runtime registram loggers filhos
-    # dinamicamente. ajusta também os que já tiverem sido criados.
-    for name in list(logging.root.manager.loggerDict):
-        if "qiskit_runtime_service" in name or name.startswith("qiskit_ibm_runtime"):
-            logging.getLogger(name).setLevel(logging.ERROR)
-
-
-def _ibm_backend(num_qubits, backend_name=None, instance=None):
-    from dotenv import load_dotenv
-    from qiskit_ibm_runtime import QiskitRuntimeService
-
-    _silence_ibm_runtime_warnings()
-    load_dotenv(Path(__file__).with_name(".env"), override=False)
-    token = os.getenv("IBM_QUANTUM_TOKEN")
-    if not token:
-        raise ValueError("Defina IBM_QUANTUM_TOKEN no ambiente ou no .env da pasta.")
-    service = QiskitRuntimeService(
-        channel="ibm_quantum_platform",
-        token=token,
-        instance=instance or os.getenv("IBM_QUANTUM_INSTANCE") or "auto",
-    )
-    if backend_name:
-        backend = service.backend(backend_name)
-    else:
-        backend = service.least_busy(
-            operational=True,
-            simulator=False,
-            min_num_qubits=num_qubits,
-        )
-    if backend.num_qubits < num_qubits:
-        raise ValueError(f"O backend precisa ter pelo menos {num_qubits} qubits.")
-    return backend
-
-
-def _run_ibm(N, a, shots, backend, seed, progress, *, circuit=None):
-    from qiskit import transpile
-    from qiskit_ibm_runtime import SamplerV2
-    from quantum import build_order_finding_circuit
-
-    if circuit is None:
-        circuit = build_order_finding_circuit(N, a)
-    compiled = transpile(circuit, backend, optimization_level=1, seed_transpiler=seed)
-    if progress:
-        progress(
-            f"Circuito transpilado: profundidade {compiled.depth()}, {compiled.size()} operações."
-        )
-    job = SamplerV2(mode=backend).run([compiled], shots=shots)
-    if progress:
-        progress(f"Job IBM: {job.job_id()}")
-    return job.result()[0].data.c.get_counts()
-
-
 def etapa4_busca_quantica_de_ordem(
     N,
     a,
@@ -292,7 +226,11 @@ def etapa4_busca_quantica_de_ordem(
             noise=fake_noise,
             progress=progress,
         )
-    return _run_ibm(N, a, shots, backend, seed, progress, circuit=circuit)
+    if circuit is None:
+        from quantum import build_order_finding_circuit
+
+        circuit = build_order_finding_circuit(N, a)
+    return run_ibm(circuit, shots, backend, seed=seed, progress=progress)
 
 
 def factor(
@@ -395,7 +333,7 @@ def factor(
             qiskit_errors = (QiskitError,)
         try:
             if mode == "ibm" and backend is None:
-                backend = _ibm_backend(3 * n, backend_name, instance)
+                backend = get_ibm_backend(3 * n, backend_name, instance)
                 if progress:
                     progress(f"Backend selecionado: {backend.name}")
             circuit = None
