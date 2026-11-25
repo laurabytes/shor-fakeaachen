@@ -25,7 +25,7 @@ import math
 import platform
 import statistics
 import time
-from collections import Counter, defaultdict
+from collections import defaultdict
 from pathlib import Path
 
 N = 77
@@ -575,6 +575,7 @@ def main():
 
         print(f"\n[{spec['id']}] {spec['description']}", flush=True)
         start = time.perf_counter()
+        compiled = None
         try:
             print(f"[{spec['id']}] etapa 1/3: iniciando transpile (um processo).", flush=True)
             compiled = transpile(circuit, **transpile_kwargs(spec))
@@ -597,17 +598,14 @@ def main():
                 f"2Q={row['two_qubit_ops']} time={elapsed:.2f}s",
                 flush=True,
             )
-            del compiled
+            compiled = None
             gc.collect()
         except Exception as exc:
             row["transpile_time_s"] = round(time.perf_counter() - start, 6)
             row["status"] = "error"
             row["error"] = f"{type(exc).__name__}: {exc}"
             print(f"ERRO: {row['error']}", flush=True)
-            try:
-                del compiled
-            except UnboundLocalError:
-                pass
+            compiled = None
             gc.collect()
 
         rows.append(row)
