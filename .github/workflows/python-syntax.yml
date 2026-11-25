@@ -30,6 +30,9 @@ jobs:
       - name: verificar sintaxe
         run: python -m compileall -q .
 
+      - name: verificar formatação
+        run: ruff format --check .
+
       - name: verificar imports e nomes
         run: ruff check --select F .
 
