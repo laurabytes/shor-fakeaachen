@@ -4,14 +4,14 @@
   "num_qubits": 156,
   "coupling_edges_undirected": 176,
   "basis_operation_names": [
+    "delay",
     "id",
     "rz",
-    "delay",
     "x",
-    "cz",
-    "if_else",
-    "sx",
     "measure",
+    "cz",
+    "sx",
+    "if_else",
     "reset"
   ],
   "median_2q_error_over_available_native_edges": 0.0015352347706142633,
