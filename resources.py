@@ -1,4 +1,4 @@
-"""estimativa simples de memória para a simulação numpy local."""
+"""estimativa de memória para a simulação local com NumPy."""
 
 from __future__ import annotations
 
