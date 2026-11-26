@@ -1,14 +1,10 @@
-# origem dos arquivos
+# Organização do código
 
-- `quantum.py`: circuito lógico derivado do código-base fornecido na disciplina. A implementação matemática foi preservada.
-- `shor.py`: organiza as etapas didáticas da fatoração e conecta o circuito aos simuladores.
-- `classical.py`, `backends.py` e `resources.py`: funções auxiliares de pós-processamento, execução e memória.
-- `backend.py`, `metricas.py` e `graficos.py`: análise do snapshot, métricas de transpilação e visualização.
-- `otimizar.py`: compara os níveis de otimização, layouts e roteamentos.
-- `validar.py`, `ruido.py` e `validar_aer.py`: validação lógica, modelo de ruído e simulação MPS compactada.
+- `shor_original.py`: versão de referência preservada a partir do código-fonte reunido anteriormente; os módulos `shor_*.py` mantêm compatibilidade com os auxiliares deste projeto.
+- `shor.py` e `quantum.py`: fluxo de execução e circuito lógico utilizados no projeto.
+- `classical.py`, `backends.py` e `resources.py`: pós-processamento, simuladores e estimativa de recursos.
+- `shor_otimizado.py`: entrada principal dos experimentos; chama `otimizar.py`.
+- `backend.py`, `metricas.py` e `graficos.py`: caracterização, métricas e gráficos.
+- `validar.py`, `validar_aer.py` e `ruido.py`: validação lógica, simulação MPS e modelo aproximado de ruído.
 
-## instância
-
-O estudo usa N=77 e a=30. A mesma instância matemática e o mesmo circuito lógico são mantidos entre as configurações de transpilação. Na seleção inicial com seed 42, a base 16 produziu ordem 15, que não permitiu extrair fatores. A base 30 produziu ordem 30 e os fatores 7 e 11.
-
-Os resultados já registrados não foram recalculados durante a reorganização dos arquivos.
+A instância de comparação permanece N=77 e a=30. Os resultados já registrados não foram recalculados durante esta reorganização.
