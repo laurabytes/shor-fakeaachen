@@ -1,10 +1,10 @@
-"""execução dos circuitos nos simuladores aer e fakeaachen."""
+"""execução dos circuitos no Aer e no FakeAachen."""
 
 from __future__ import annotations
 
 
 def fake_backend(num_qubits: int, backend_name: str | None = None):
-    """carrega o snapshot fakeaachen e confere a capacidade."""
+    """carrega o snapshot FakeAachen e confere se há qubits suficientes."""
     from qiskit_ibm_runtime.fake_provider import FakeAachen
 
     accepted = {"fakeaachen", "fake_aachen", "ibm_aachen", "aachen"}
@@ -20,7 +20,7 @@ def fake_backend(num_qubits: int, backend_name: str | None = None):
 
 
 def prepare_for_backend(circuit, backend, seed: int | None = None):
-    """transpila o circuito para as portas e a conectividade do backend."""
+    """transpila o circuito para as portas e conexões do backend."""
     from qiskit import transpile
 
     return transpile(
@@ -29,7 +29,7 @@ def prepare_for_backend(circuit, backend, seed: int | None = None):
 
 
 def run_aer(circuit, shots: int = 1024, seed: int | None = None, progress=None):
-    """executa o circuito no aersimulator ideal."""
+    """executa o circuito no AerSimulator ideal."""
     from qiskit import transpile
     from qiskit_aer import AerSimulator
 
@@ -49,7 +49,7 @@ def run_fake(
     noise: bool = True,
     progress=None,
 ):
-    """executa no aer com topologia fakeaachen e ruído opcional."""
+    """executa no Aer com a topologia do FakeAachen e ruído opcional."""
     from qiskit_aer import AerSimulator
     from qiskit_aer.noise import NoiseModel
 
