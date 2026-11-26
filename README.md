@@ -45,6 +45,6 @@ python validar_aer.py --config E3 --mode ideal --shots 8
 
 Os CSVs, snapshots, calibrações, gráficos e evidências estão em `resultados/`. O relatório completo está em [relatorio.md](relatorio.md).
 
-E3 apresentou a melhor redução estrutural entre as configurações concluídas, mas a validação MPS do circuito transpilado é aproximada e inconclusiva. A execução ruidosa disponível tem somente oito shots. Consulte as limitações no relatório antes de interpretar os resultados.
+E3 apresentou a melhor redução estrutural entre as configurações concluídas, mas a validação MPS do circuito transpilado é aproximada e inconclusiva. O registro da execução ruidosa está interrompido e não contém contagens válidas. Consulte as limitações no relatório antes de interpretar os resultados.
 
 **Importante:** FakeAachen é um backend simulado baseado em snapshot; não é uma QPU física nem uma calibração ao vivo.
