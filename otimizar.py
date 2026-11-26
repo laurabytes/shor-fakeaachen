@@ -276,7 +276,13 @@ def main():
             if spec["id"] == "E0_reference_L1_auto":
                 write_circuit_preview(
                     compiled,
-                    args.output / "circuito_referencia.txt",
+                    args.output / "circuito_referencia_transpilado.txt",
+                    max_instructions=80,
+                )
+            if spec["id"] == "E3_L3_auto":
+                write_circuit_preview(
+                    compiled,
+                    args.output / "circuito_E3_transpilado.txt",
                     max_instructions=80,
                 )
             print(
