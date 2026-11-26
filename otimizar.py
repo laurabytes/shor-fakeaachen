@@ -1,4 +1,4 @@
-"""executa e compara as configurações de transpilação do circuito de shor."""
+"""executa e compara as configurações de transpilação do circuito de Shor."""
 
 from __future__ import annotations
 
@@ -40,7 +40,7 @@ def make_experiments(low_region, center_region):
     return [
         {
             "id": "E0_reference_L1_auto",
-            "description": "Referência obrigatória: optimization_level=1, sem initial_layout manual.",
+            "description": "Referência: optimization_level=1, sem initial_layout manual.",
             "optimization_level": 1,
         },
         {
@@ -74,14 +74,14 @@ def make_experiments(low_region, center_region):
         },
         {
             "id": "E6_manual_low_error",
-            "description": "Initial layout manual em subgrafo conectado de menor custo de calibração; roteamento SABRE.",
+            "description": "Layout manual em subgrafo conectado com menor custo de calibração; roteamento SABRE.",
             "optimization_level": 1,
             "initial_layout": low_region,
             "routing_method": "sabre",
         },
         {
             "id": "E7_manual_low_error_reversed",
-            "description": "Mesmo conjunto de qubits de E6, ordem lógica-física invertida para isolar o efeito do mapeamento.",
+            "description": "Mesmo conjunto de qubits de E6, com a associação lógica-física invertida.",
             "optimization_level": 1,
             "initial_layout": list(reversed(low_region)),
             "routing_method": "sabre",
@@ -134,7 +134,7 @@ def main():
     print(
         f"Backend: {backend.name}; qubits: {backend.num_qubits}; logical circuit qubits: {logical_qubits}"
     )
-    print("Construindo circuito lógico do código-base do professor (N=77, a=30)...")
+    print("Montando o circuito lógico (N=77, a=30)...")
     circuit = build_order_finding_circuit(N, A, synthesis="auto")
     (args.output / "circuito_logico.txt").write_text(
         circuit.draw(output="text", fold=120).__str__(), encoding="utf-8"
