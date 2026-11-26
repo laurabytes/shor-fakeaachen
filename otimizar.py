@@ -352,6 +352,25 @@ def main():
         write_circuit_preview(
             best_circuit, args.output / "circuito_recomendado.txt", max_instructions=80
         )
+        if best_id == "E3_L3_auto":
+            write_circuit_preview(
+                best_circuit, args.output / "circuito_E3_transpilado.txt", max_instructions=80
+            )
+        del best_circuit
+        gc.collect()
+
+        reference_spec = next(
+            spec for spec in experiment_specs if spec["id"] == "E0_reference_L1_auto"
+        )
+        reference_circuit = transpile(circuit, **transpile_kwargs(reference_spec))
+        write_circuit_preview(
+            reference_circuit,
+            args.output / "circuito_referencia_transpilado.txt",
+            max_instructions=80,
+        )
+        del reference_circuit
+        gc.collect()
+
         (args.output / "configuracao_recomendada.json").write_text(
             json.dumps(
                 {
@@ -364,9 +383,7 @@ def main():
             ),
             encoding="utf-8",
         )
-        # libera o circuito recompilado depois de salvar a prévia.
-        del best_circuit
-        gc.collect()
+        # As prévias da referência e da configuração recomendada já foram salvas.
 
     render_comparison_plots(rows, args.output)
     backend_info = {
