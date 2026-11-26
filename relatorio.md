@@ -3,7 +3,7 @@
 **aluna:** Laura Fagundes  
 **disciplina:** Computação Quântica Aplicada à Defesa Cibernética  
 **professor:** Anderson Fernandes Pereira dos Santos  
-**backend:** FakeAachen · família Heron r3  
+**backend:** `FakeAachen` (snapshot FakeProvider de 156 qubits; associação histórica com `ibm_aachen`, sem metadado de revisão exposto pela classe fake)  
 **instância:** N = 77 · a = 30 · seed = 42
 
 ## resumo
@@ -51,7 +51,7 @@ as métricas consideradas foram profundidade, operações totais, operações de
 
 ## 3. caracterização do backend
 
-o snapshot local do FakeAachen registra:
+o snapshot local do `FakeAachen` registra 156 qubits, 176 conexões não direcionadas e os parâmetros operacionais abaixo. A documentação oficial do Qiskit identifica `FakeAachen` como um backend fake de 156 qubits, mas não declara família/revisão do processador na descrição da classe. A IBM informou que o QPU real `ibm_aachen` foi atualizado para Heron r3 em março de 2026. Portanto, neste trabalho, Heron r3 é apresentado apenas como contexto do equipamento real associado ao nome Aachen, não como metadado comprovado do objeto `FakeAachen` utilizado.
 
 | característica | valor |
 |---|---:|
@@ -158,3 +158,28 @@ os layouts manuais avaliados não superaram a referência. a simulação lógica
 | NetworkX | 3.7 |
 
 os comandos de instalação e reprodução estão no `README.md`. os artefatos de evidência incluem `resultados.csv`, `backend_snapshot.json`, `calibracao_qubits.csv`, `calibracao_arestas.csv`, `validacao_reduzida.md` e os arquivos de contagem compactada. o script `otimizar.py` também exporta prévias textuais do circuito de referência e de E3 após transpilação, limitadas às primeiras 80 instruções para manter os arquivos legíveis.
+
+
+## 9. auditoria da evidência de validação e rastreabilidade
+
+A validação é apresentada em níveis distintos, conforme a evidência efetivamente disponível:
+
+| Evidência | Arquivo disponível | O que sustenta | Limite |
+|---|---|---|---|
+| Circuito lógico ideal | `resultados/validacao_counts.json` (seção `logical_original_ideal_evidence`) e `resultados/validacao_reduzida.md` | 1.024 shots; período 30; fatores 7 e 11 | Simulação lógica ideal, não é execução Aer do circuito transpilado |
+| E3 ideal MPS, 1.024 shots | `resultados/validacao_compacta/E3_ideal_mps_bond16_shots1024_counts.csv` | CSV contém 975 resultados distintos, soma 1.024 contagens e frequência máxima 3 | Não foi localizado JSON pareado dessa execução; parâmetros e metadados não podem ser revalidados a partir do CSV isolado |
+| E3 ideal MPS, 8 shots | `resultados/validacao_compacta/E3_ideal_mps_bond16_shots8.json` | Execução concluída; 8 resultados distintos; nenhum período/fator recuperado | É uma execução separada de apenas 8 shots; não deve ser confundida com o CSV de 1.024 shots |
+| E3 ruidoso MPS, 8 shots | `resultados/validacao_compacta/E3_noisy_mps_bond16_shots8.json` | JSON registra interrupção manual e nenhuma contagem produzida | Não há resultado ruidoso concluído |
+| Tentativa Aer E0/E3 | `resultados/validacao_counts.json` | Registra erro `AerError: Invalid option max_qubits` para E0 e E3 | Não produziu contagens ideais ou ruidosas para os circuitos transpilados |
+
+O CSV MPS de 1.024 shots foi auditado estruturalmente: 975 linhas de resultados, total de 1.024 shots e frequência máxima igual a 3. Como não há JSON correspondente no repositório, os números de pós-processamento reportados anteriormente (período e fatores) devem ser tratados como resultados anotados no resumo de validação, não como metadados integralmente rastreáveis pelo artefato bruto atualmente versionado.
+
+Assim, a evidência disponível permite afirmar que a simulação lógica ideal recuperou a fatoração e que existe uma amostra MPS ideal de E3 com 1.024 contagens muito dispersas. Não permite afirmar equivalência estatística entre circuito lógico, E0 e E3, nem sucesso de E3 sob ruído. A ausência de uma execução ruidosa concluída e da comparação Aer equivalente é uma limitação experimental explícita, não um resultado negativo de fatoração.
+
+## 10. identificação do backend: escopo da afirmação
+
+A documentação oficial do Qiskit descreve `FakeAachen` como um backend fake de 156 qubits. A documentação IBM sobre processadores identifica a família Heron e suas revisões; o changelog IBM registra que o equipamento real `ibm_aachen` foi atualizado para Heron r3 em março de 2026. Contudo, a classe `FakeAachen` documentada não expõe, na descrição pública da classe, um campo explícito `processor_type` ou `revision`. Por rigor, o relatório não afirma que o snapshot local contém uma identificação Heron r3 verificável internamente. Os dados experimentais são atribuídos ao snapshot `FakeAachen` (156 qubits), e a referência Heron r3 é contextualizada como informação sobre o QPU real `ibm_aachen`.
+
+## 11. entregáveis e reprodutibilidade
+
+O enunciado solicita um arquivo compactado contendo `relatorio.pdf`, `shor_original.py`, `shor_otimizado.py`, `resultados.csv`, `requirements.txt` e `README.md`. O repositório contém esses arquivos, além dos módulos-fonte do professor preservados em `fontes_professor/`, dados do snapshot, calibrações, gráficos, circuitos e evidências de validação. A entrega final deve ser compactada como ZIP; o link do GitHub, sozinho, não substitui o arquivo compactado solicitado.
