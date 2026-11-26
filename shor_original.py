@@ -1,7 +1,7 @@
-"""Demonstração de Shor: AerSimulator, FakeProvider, IBM e referência NumPy.
+"""implementação de Shor com simuladores locais e backends IBM.
 
-Importar este módulo não acessa a rede nem inicia uma fatoração.
-Veja README.md para os limites desta implementação didática.
+A importação não acessa a rede nem inicia uma fatoração. Consulte o README
+para ver os modos de execução e os limites desta versão didática.
 """
 
 from __future__ import annotations
@@ -60,11 +60,10 @@ def etapa1_validar_entrada(N: int) -> None:
 
 
 def etapa2_preprocessamento(N: int, *, quantum: bool = False):
-    """Etapa 2: pares, divisão opcional, primalidade e potências perfeitas.
+    """Verifica casos simples antes de iniciar a busca quântica.
 
-    A divisão por primos pequenos é uma conveniência da demonstração e pode
-    ser pulada. Não se faz divisão exaustiva até sqrt(N) antes de usar Shor.
-    Acima de 64 bits, a rejeição de primos usa Miller–Rabin probabilístico.
+    A divisão por primos pequenos é opcional. Para números acima de 64 bits,
+    o teste de primalidade usa Miller–Rabin probabilístico.
     """
     from shor_classical import is_prime, perfect_power_factors
     found, factors = etapa_2_verificacao_preliminar(N, () if quantum else SMALL_PRIMES)
@@ -103,7 +102,7 @@ def etapa3_escolher_base(N, rng=None, base=None):
 
 
 def retrieve_denominator(measured_decimal, num_counting_qubits, N):
-    """Obtém um candidato a período usando TODOS os bits medidos.
+    """Obtém um candidato a período usando todos os bits medidos.
 
     O denominador pode ser apenas um divisor da ordem, ou um candidato
     incorreto. A fatoração valida a**r mod N antes de usar esse resultado.
@@ -158,7 +157,7 @@ def etapa6_extrair_fatores(N, x):
 
 
 def _silence_ibm_runtime_warnings():
-    """Oculta avisos informativos do IBM Runtime, preservando erros reais."""
+    """Reduz avisos informativos do IBM Runtime sem ocultar erros."""
     logger_names = (
         "qiskit_ibm_runtime",
         "qiskit_ibm_runtime.qiskit_runtime_service",
@@ -222,10 +221,9 @@ def etapa4_busca_quantica_de_ordem(
     N, a, *, mode, shots, seed, max_memory_mb, progress=None,
     circuit=None, backend=None, backend_name=None, fake_noise=True,
 ):
-    """Etapa 4: executa preparação, U modular controlada, QFT⁻¹ e medição.
+    """Executa a busca de ordem no modo escolhido.
 
-    Todos os modos realizam a mesma busca de ordem; somente o executor muda.
-    A ordem nunca é calculada previamente para fabricar medições.
+    O modo muda o executor, mas não a sequência lógica do circuito.
     """
     if mode == "local":
         from shor_quantum import simulate_order_finding
@@ -246,11 +244,10 @@ def factor(
     quantum=False, base=None, backend_name=None, instance=None, progress=None,
     max_memory_mb=None, fake_noise=True, show_circuit=False, synthesis="auto",
 ):
-    """Encontra um par de fatores próprios, ou informa a impossibilidade/falha.
+    """Tenta encontrar dois fatores próprios de N.
 
-    quantum=True pula a divisão por primos pequenos para exercitar a busca
-    quântica. N par e potência perfeita ainda são tratados classicamente.
-    Não há teto fixo para N; a implementação quântica usa recursos exponenciais.
+    Com quantum=True, a divisão por primos pequenos é ignorada para exercitar
+    a busca de ordem. N par e potências perfeitas continuam no pré-processamento.
     """
     etapa1_validar_entrada(N)
     if mode not in ("local", "aer", "fake", "ibm"):
