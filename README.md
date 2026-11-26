@@ -2,15 +2,16 @@
 
 Projeto da disciplina **Computação Quântica Aplicada à Defesa Cibernética**.
 
-O estudo compara estratégias de transpilação do circuito de busca de ordem de Shor no backend simulado FakeAachen.
+Compara estratégias de transpilação do circuito de busca de ordem de Shor no snapshot simulado FakeAachen.
 
-## Configuração
+## Experimento
 
+- Instância fixa: (N=77), (a=30)
 - Backend: FakeAachen (156 qubits)
-- Instância fixa: N = 77, a = 30
 - Circuito lógico: 21 qubits
 - Seed: 42
-- Referência: optimization_level=1, sem initial_layout manual
+- Referência E0: `optimization_level=1`, sem `initial_layout` manual
+- E0–E4 e E6–E8 concluídos; E5 pulado sem métricas inventadas
 
 ## Instalação
 
@@ -19,40 +20,31 @@ Requer Python 3.12.
 ```bash
 python3.12 -m venv .venv
 source .venv/bin/activate
-python -m pip install -r requirements.txt
+python -m pip install --upgrade pip
+pip install -r requirements.txt
 ```
 
 ## Execução
 
-Referência lógica:
-
 ```bash
+# Simulação lógica de referência
 python shor_original.py 77 --mode local --quantum --base 30
-```
 
-Experimentos de transpilação:
-
-```bash
+# Experimentos de transpilação (E5 foi pulado na execução registrada)
 python shor_otimizado.py --skip-experiment E5_dense_basic
-```
 
-Validação e testes:
-
-```bash
+# Testes e validação lógica
 python validar.py --shots 1024 --seed 42
 python -m unittest discover -s tests
-```
 
-Validação MPS exploratória de E3:
-
-```bash
+# Validação MPS exploratória de E3
 python validar_aer.py --config E3 --mode ideal --shots 8
 ```
 
 ## Resultados
 
-Os dados e gráficos ficam em `resultados/`. E0–E4 e E6–E8 foram concluídos; E5 foi mantido como pulado, sem métricas inventadas.
+Os CSVs, snapshots, calibrações, gráficos e evidências estão em `resultados/`. O relatório completo está em [relatorio.md](relatorio.md).
 
-E3 apresentou as menores profundidade, operações totais e operações 2Q entre as configurações concluídas. A validação do circuito transpilado permanece inconclusiva; consulte `relatorio.md` e `resultados/validacao_reduzida.md`.
+E3 apresentou a melhor redução estrutural entre as configurações concluídas, mas a validação MPS do circuito transpilado é aproximada e inconclusiva. A execução ruidosa disponível tem somente oito shots. Consulte as limitações no relatório antes de interpretar os resultados.
 
-O FakeAachen é um snapshot simulado, não uma QPU física.
+**Importante:** FakeAachen é um backend simulado baseado em snapshot; não é uma QPU física nem uma calibração ao vivo.
