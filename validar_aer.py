@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""validação aer compactada para e0/e3 do estudo shor/fakeaachen.
+"""validação compactada de E0 e E3 com o AerSimulator.
 
-a rotina recompila a instância original n=77, a=30 com os mesmos níveis de
+a rotina recompila a instância N=77, a=30 com os mesmos níveis de
 otimização usados nos experimentos, remove fios físicos completamente ociosos
 (sem remover operações lógicas) e reindexa o modelo de ruído fakeaachen para
 os qubits compactados. a simulação mps usa truncamento configurável e, por isso,
@@ -13,7 +13,7 @@ uso recomendado no mac:
   python validar_aer.py --config e3 --mode ideal --shots 8
   python validar_aer.py --config e3 --mode noisy --shots 8
 
-cada execução salva seu json/csv separadamente. não altera resultados.csv.
+cada execução salva seu JSON e CSV separadamente. o arquivo resultados.csv não é alterado.
 """
 
 from __future__ import annotations
