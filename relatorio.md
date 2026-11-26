@@ -8,7 +8,7 @@
 
 ## resumo
 
-este trabalho compara estratégias de transpilação para o circuito lógico de busca de ordem do algoritmo de Shor, mantendo a mesma implementação lógica e a mesma instância matemática. foram avaliadas oito configurações no total: E0 é a referência e E1, E2, E3, E4, E6 e E8 são experimentos adicionais concluídos; E7 também foi concluído. E5 foi pulado antes de produzir métricas.
+este trabalho compara estratégias de transpilação para o circuito lógico de busca de ordem do algoritmo de Shor, mantendo a mesma implementação lógica e a mesma instância matemática. foram avaliadas oito configurações no total: E0 é a referência e E1, E2, E3, E4, E6, E7 e E8 são sete experimentos adicionais concluídos. E5 foi pulado antes de produzir métricas.
 
 E3, com `optimization_level=3` e layout automático, apresentou o melhor resultado estrutural entre as execuções concluídas: menor profundidade, menor número de operações totais, menor número de operações 2Q e melhor proxy logarítmica. o tempo de transpilação foi maior que o da referência E0.
 
