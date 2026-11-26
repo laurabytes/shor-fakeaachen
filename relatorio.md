@@ -135,7 +135,7 @@ apesar de o pós-processamento da amostra MPS ter retornado r=30 e os fatores 7 
 
 ### simulação ruidosa
 
-a execução ruidosa compactada de E3 disponível contém apenas 8 shots, todos distintos, sem recuperação de período ou fatores. a amostra é insuficiente para estimar taxa de sucesso. o modelo utiliza canais depolarizantes e erro simétrico de leitura derivados do snapshot; não inclui integralmente T1/T2, crosstalk, leakage, drift ou custom noise passes.
+o registro JSON da execução ruidosa compactada de E3 indica interrupção manual antes da conclusão e informa que nenhuma contagem foi produzida. existe um CSV de oito linhas com o mesmo nome-base, mas ele não corresponde ao estado registrado no JSON; por falta de evidência que vincule esse CSV a uma execução concluída, ele foi tratado como artefato órfão e não foi usado para afirmar resultados. o modelo ruidoso previsto no script utiliza canais depolarizantes e erro simétrico de leitura derivados do snapshot; não inclui integralmente T1/T2, crosstalk, leakage, drift ou custom noise passes.
 
 a simulação Aer de E0 não foi concluída. portanto, não há comparação estatística equivalente entre E0 e E3.
 
@@ -157,4 +157,4 @@ os layouts manuais avaliados não superaram a referência. a simulação lógica
 | Matplotlib | 3.11.2 |
 | NetworkX | 3.7 |
 
-os comandos de instalação e reprodução estão no `README.md`. os artefatos de evidência incluem `resultados.csv`, `backend_snapshot.json`, `calibracao_qubits.csv`, `calibracao_arestas.csv`, `validacao_reduzida.md` e os arquivos de contagem compactada.
+os comandos de instalação e reprodução estão no `README.md`. os artefatos de evidência incluem `resultados.csv`, `backend_snapshot.json`, `calibracao_qubits.csv`, `calibracao_arestas.csv`, `validacao_reduzida.md` e os arquivos de contagem compactada. o script `otimizar.py` também exporta prévias textuais do circuito de referência e de E3 após transpilação, limitadas às primeiras 80 instruções para manter os arquivos legíveis.
