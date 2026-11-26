@@ -30,8 +30,8 @@ pip install -r requirements.txt
 # Simulação lógica de referência
 python shor_original.py 77 --mode local --quantum --base 30
 
-# Experimentos de transpilação (E5 foi pulado na execução registrada)
-python shor_otimizado.py --skip-experiment E5_dense_basic
+# Reaproveita as métricas salvas e exporta as prévias reais de E0 e E3
+python shor_otimizado.py --resume --skip-experiment E5_dense_basic
 
 # Testes e validação lógica
 python validar.py --shots 1024 --seed 42
