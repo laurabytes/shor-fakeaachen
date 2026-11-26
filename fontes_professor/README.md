@@ -1,12 +1,12 @@
 # Material-base do professor
 
-Os arquivos recebidos junto à avaliação são:
+Os quatro arquivos recebidos como material-base estão versionados nesta pasta:
 
 - `shor_quantum.py` — construção do circuito de busca de ordem e simulação lógica.
 - `shor_classical.py` — validação clássica, recuperação do período e extração dos fatores.
 - `shor_backends.py` — executores Aer e FakeProvider.
 - `shor_resources.py` — estimativa e verificação de recursos.
 
-No projeto, as adaptações usadas pelos experimentos permanecem nos módulos da raiz (`quantum.py`, `classical.py`, `backends.py` e `resources.py`). Os arquivos `shor_*.py` da raiz são pontos de compatibilidade, não devem ser confundidos com os quatro arquivos-fonte originais.
+Os módulos adaptados para os experimentos ficam na raiz (`quantum.py`, `classical.py`, `backends.py` e `resources.py`). O arquivo `shor_original.py` da raiz é o ponto de entrada/compatibilidade usado pelo projeto; não deve ser confundido com os quatro módulos-base listados acima.
 
-**Preservação:** os anexos originais não foram modificados. Este índice registra sua função e evita confundir os anexos do professor com os adaptadores do projeto. Para manter uma cópia byte a byte no repositório, os quatro anexos precisam ser adicionados a esta pasta a partir dos arquivos originais recebidos na avaliação.
+Os arquivos desta pasta devem ser preservados sem alterações. A existência dos quatro arquivos nesta pasta foi conferida na árvore do repositório.
