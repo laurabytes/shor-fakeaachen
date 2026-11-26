@@ -1,4 +1,4 @@
-"""rotinas clássicas auxiliares para a implementação de shor fornecida."""
+"""rotinas clássicas usadas na implementação de Shor."""
 
 from __future__ import annotations
 from fractions import Fraction
@@ -65,7 +65,7 @@ def _measurement_integer(bitstring: str) -> int:
 
 
 def recover_order(counts: dict[str, int], N: int, a: int, num_counting_qubits: int):
-    """tenta recuperar r por frações contínuas e combina divisores por mmc.
+    """recupera r por frações contínuas e combina denominadores por mmc.
 
     cada denominador isolado pode ser apenas um divisor da ordem. a rotina
     valida sempre pow(a, r, n) == 1 antes de devolver um candidato.
