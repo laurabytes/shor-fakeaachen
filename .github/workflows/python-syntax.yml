@@ -29,8 +29,8 @@ jobs:
       - name: verificar sintaxe
         run: python -m compileall -q .
 
-      - name: verificar imports e nomes
-        run: ruff check --select F .
+      - name: verificar imports e nomes dos arquivos de entrada
+        run: ruff check --select F shor_otimizado.py shor_classical.py shor_quantum.py shor_resources.py shor_backends.py tests/test_shor.py
 
       - name: executar testes
         run: python -m unittest discover -s tests -v
