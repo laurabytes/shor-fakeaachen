@@ -1,6 +1,6 @@
-# Validação reduzida — Shor / FakeAachen
+# validação reduzida — shor / fakeaachen
 
-## 1. Circuito lógico original — simulação ideal
+## 1. circuito lógico original
 
 - Instância: N=77, a=30.
 - Método: simulação ideal NumPy do circuito lógico de busca de ordem (módulo quantum.py).
@@ -12,7 +12,7 @@
 
 Esta etapa simula o circuito lógico por uma implementação NumPy da evolução do registro de contagem e do registro alvo. Não é uma execução do Aer e não representa o circuito físico pós-transpilação.
 
-## 2. Auditoria estrutural dos circuitos transpilados
+## 2. comparação dos circuitos transpilados
 
 | Métrica | E0 — Referência | E3 — Otimizado |
 |---|---:|---:|
@@ -26,7 +26,7 @@ Esta etapa simula o circuito lógico por uma implementação NumPy da evolução
 Reduções de E3 vs. E0: profundidade 20.02%; operações totais 15.97%; operações 2Q 11.72%.
 A diferença de log10(proxy), E3 − E0, é 18.340; valor positivo favorece E3 nessa proxy aproximada.
 
-## 3. Auditoria das contagens MPS já existentes
+## 3. contagens MPS disponíveis
 
 As contagens abaixo foram lidas de CSVs existentes; esta rotina não inicia novas simulações Aer.
 
@@ -38,12 +38,12 @@ As contagens abaixo foram lidas de CSVs existentes; esta rotina não inicia nova
 
 A distância aos picos esperados é apenas uma verificação descritiva. Bond dimension e truncamento limitam a precisão do MPS; recuperar um período no pós-processamento, isoladamente, não comprova que a distribuição foi preservada.
 
-## 4. Limitação da simulação dos circuitos físicos
+## 4. limites da simulação
 
 A tentativa Aer para E0 foi iniciada, mas foi interrompida manualmente antes de produzir contagens. A simulação lógica ideal NumPy não substitui uma distribuição de medições do circuito transpilado. A validação MPS E3 disponível é aproximada e deve ser interpretada à luz da auditoria de distribuição acima.
 O JSON correspondente registra a execução ruidosa E3 como interrompida manualmente, sem contagens. Há um CSV de oito linhas com o mesmo nome-base, mas ele não corresponde ao estado do JSON; sem evidência de proveniência, foi excluído da análise como artefato órfão. Não há uma comparação estatística E0/E3 ideal e ruidosa concluída.
 
-## 5. Conclusão da validação reduzida
+## 5. conclusão
 
 A simulação ideal do circuito lógico recupera r=30 e os fatores 7 e 11. E3 apresenta melhoria estrutural e melhor proxy de fidelidade frente a E0 neste snapshot. A distribuição MPS aproximada de E3 deve ser tratada como inconclusiva quando diverge dos picos da amostra lógica; a execução ruidosa de 8 shots não permite estimar probabilidade de fatoração.
 
