@@ -1,0 +1,54 @@
+{
+  "config": "E3",
+  "backend": "fake_aachen",
+  "N": 77,
+  "a": 30,
+  "seed_transpiler": 42,
+  "compaction": {
+    "original_width": 156,
+    "compact_width": 24,
+    "original_depth": 1412349,
+    "original_size": 2117589,
+    "active_physical_qubits": [
+      37,
+      41,
+      42,
+      43,
+      44,
+      45,
+      46,
+      47,
+      48,
+      49,
+      50,
+      51,
+      56,
+      57,
+      58,
+      63,
+      64,
+      65,
+      66,
+      67,
+      68,
+      69,
+      70,
+      71
+    ],
+    "idle_physical_qubits_removed": 132,
+    "barriers_removed": true,
+    "compact_depth": 1412349,
+    "compact_size": 2117589
+  },
+  "matches_recorded_physical_qubits": true,
+  "method_note": "Circuito transpilado preservado, exceto remoção de barreiras e fios físicos sem instruções. A simulação MPS usa truncamento configurável; resultados devem ser rotulados como aproximados. No modo noisy usa-se modelo simplificado derivado de gate_error e readout_error do snapshot, sem T1/T2 ou custom noise passes.",
+  "aer_runs": {
+    "noisy": {
+      "status": "interrupted_by_user",
+      "details": "Simulação interrompida manualmente antes da conclusão; nenhuma contagem foi produzida.",
+      "shots_requested": 8,
+      "mps_max_bond_dimension": 16,
+      "mps_truncation_threshold": 1e-08
+    }
+  }
+}

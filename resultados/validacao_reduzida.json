@@ -4,7 +4,7 @@
   "N": 77,
   "a": 30,
   "logical_original_ideal": {
-    "method": "simulação ideal NumPy do circuito lógico de busca de ordem (módulo shor_quantum.py)",
+    "method": "simulação ideal NumPy do circuito lógico de busca de ordem (módulo quantum.py)",
     "not_aer": true,
     "N": 77,
     "a": 30,
@@ -437,8 +437,54 @@
     "log10_proxy_E3_minus_E0": 18.339578470412505
   },
   "aer_simulation_E0_E3": {
-    "status": "not_completed_manual_interrupt",
-    "details": "Aer iniciou a tentativa sobre E0 (156 fios físicos, 2.519.962 instruções), mas a execução foi interrompida manualmente com Ctrl+C antes da conclusão. A tentativa anterior também registrou a opção max_qubits inválida; essa opção foi retirada na versão seguinte. Nenhuma contagem Aer ideal/ruidosa de E0 ou E3 é reportada neste arquivo."
+    "status": "E0_not_completed_E3_compacted_MPS_exploratory",
+    "details": "A tentativa Aer full-width de E0 (156 fios físicos, 2.519.962 instruções) foi interrompida manualmente antes de produzir contagens. Para E3 existem execuções compactadas MPS separadas, com bond dimension máximo 16 e truncamento de 1e-8, auditadas em transpiled_E3_mps_count_audits. Essa aproximação apresentou distribuição muito mais dispersa que a amostra lógica ideal e não deve ser tratada como validação conclusiva. O resultado ruidoso de 8 shots é somente exploratório."
   },
-  "interpretation": "A evidência ideal diz respeito ao circuito lógico original. As métricas de E0 e E3 são resultados reais de transpilação, e a auditoria estrutural confere os dados registrados no CSV e as portas frente ao snapshot. Isso não substitui uma simulação de distribuição de medições dos circuitos transpilados."
+  "interpretation": "A simulação NumPy valida o fluxo ideal do circuito lógico original. As métricas E0/E3 são resultados reais de transpilação. A execução compactada MPS de E3 é aproximada e inconclusiva quanto à preservação da distribuição; a execução ruidosa disponível tem somente 8 shots. A tentativa Aer full-width de E0 foi interrompida.",
+  "transpiled_E3_mps_count_audits": {
+    "E3_ideal_mps_bond16_shots1024_counts.csv": {
+      "source_csv": "/Users/laurafagundes/Downloads/fakeaachen !!!!! original/shor-fakeaachen/resultados/validacao_compacta/E3_ideal_mps_bond16_shots1024_counts.csv",
+      "shots": 1024,
+      "distinct_outcomes": 975,
+      "maximum_outcome_count": 3,
+      "recovered_period": 30,
+      "period_valid": true,
+      "x": 43,
+      "factors": [
+        7,
+        11
+      ],
+      "factorization_valid": true,
+      "verification": "7 × 11 = 77",
+      "shots_within_one_count_bin_of_nearest_r30_peak": 6,
+      "fraction_within_one_count_bin_of_nearest_r30_peak": 0.005859375,
+      "note": "A auditoria de proximidade aos picos é descritiva. Para MPS com truncamento, não constitui prova de equivalência nem estimativa da probabilidade de fatoração."
+    },
+    "E3_ideal_mps_bond16_shots8_counts.csv": {
+      "source_csv": "/Users/laurafagundes/Downloads/fakeaachen !!!!! original/shor-fakeaachen/resultados/validacao_compacta/E3_ideal_mps_bond16_shots8_counts.csv",
+      "shots": 8,
+      "distinct_outcomes": 8,
+      "maximum_outcome_count": 1,
+      "recovered_period": null,
+      "period_valid": false,
+      "factorization_valid": false,
+      "reason": "Não foi possível recuperar o período a partir das contagens.",
+      "shots_within_one_count_bin_of_nearest_r30_peak": 0,
+      "fraction_within_one_count_bin_of_nearest_r30_peak": 0.0,
+      "note": "A auditoria de proximidade aos picos é descritiva. Para MPS com truncamento, não constitui prova de equivalência nem estimativa da probabilidade de fatoração."
+    },
+    "E3_noisy_mps_bond16_shots8_counts.csv": {
+      "source_csv": "/Users/laurafagundes/Downloads/fakeaachen !!!!! original/shor-fakeaachen/resultados/validacao_compacta/E3_noisy_mps_bond16_shots8_counts.csv",
+      "shots": 8,
+      "distinct_outcomes": 8,
+      "maximum_outcome_count": 1,
+      "recovered_period": null,
+      "period_valid": false,
+      "factorization_valid": false,
+      "reason": "Não foi possível recuperar o período a partir das contagens.",
+      "shots_within_one_count_bin_of_nearest_r30_peak": 0,
+      "fraction_within_one_count_bin_of_nearest_r30_peak": 0.0,
+      "note": "A auditoria de proximidade aos picos é descritiva. Para MPS com truncamento, não constitui prova de equivalência nem estimativa da probabilidade de fatoração."
+    }
+  }
 }
