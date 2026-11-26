@@ -1,4 +1,4 @@
-"""testes rápidos do fluxo lógico de shor."""
+"""Testes rápidos do fluxo lógico e dos pontos de entrada."""
 
 import importlib
 import unittest
@@ -10,6 +10,12 @@ class TestShorLocal(unittest.TestCase):
     def test_modulos_importaveis(self):
         modules = (
             "shor",
+            "shor_original",
+            "shor_otimizado",
+            "shor_classical",
+            "shor_quantum",
+            "shor_resources",
+            "shor_backends",
             "quantum",
             "classical",
             "backends",

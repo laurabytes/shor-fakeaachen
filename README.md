@@ -2,7 +2,7 @@
 
 Projeto da disciplina **Computação Quântica Aplicada à Defesa Cibernética**.
 
-O estudo compara a transpilação do circuito de busca de ordem de Shor no backend simulado FakeAachen.
+O estudo compara estratégias de transpilação do circuito de busca de ordem de Shor no backend simulado FakeAachen.
 
 ## Configuração
 
@@ -24,13 +24,19 @@ python -m pip install -r requirements.txt
 
 ## Execução
 
-Executar os experimentos:
+Referência lógica:
+
+```bash
+python shor_original.py 77 --mode local --quantum --base 30
+```
+
+Experimentos de transpilação:
 
 ```bash
 python shor_otimizado.py --skip-experiment E5_dense_basic
 ```
 
-Validar o fluxo lógico e conferir os resultados:
+Validação e testes:
 
 ```bash
 python validar.py --shots 1024 --seed 42
