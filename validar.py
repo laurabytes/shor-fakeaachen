@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""validação reduzida e reprodutível para o estudo shor/fakeaachen.
+"""validação reduzida do circuito lógico e dos resultados salvos.
 
 executa a simulação ideal do circuito lógico de busca de ordem usando a
 implementação numpy do projeto, recupera e verifica o período/fatores e
 consolida as métricas já medidas dos circuitos transpilados e0 e e3.
 
-importante: esta rotina não executa novas simulações aer. ela reproduz a
+esta rotina não inicia novas simulações Aer. ela reproduz a
 simulação lógica ideal numpy e audita as contagens mps já salvas para e3,
 mantendo explícitas as limitações da aproximação.
 """
@@ -127,7 +127,7 @@ def experiment_summary(row: dict[str, str], basis_ops: set[str]) -> dict:
 
 
 def audit_mps_counts(csv_path: Path, recover_order) -> dict | None:
-    """resume contagens aer já existentes sem executar uma nova simulação."""
+    """lê contagens Aer já salvas, sem iniciar outra simulação."""
     if not csv_path.exists():
         return None
 
