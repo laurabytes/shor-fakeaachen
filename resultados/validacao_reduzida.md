@@ -34,14 +34,14 @@ As contagens abaixo foram lidas de CSVs existentes; esta rotina não inicia nova
 |---|---:|---:|---:|---:|---|---:|---:|
 | E3_ideal_mps_bond16_shots1024_counts.csv | 1024 | 975 | 3 | 30 | [7, 11] | 6 | 0.59% |
 | E3_ideal_mps_bond16_shots8_counts.csv | 8 | 8 | 1 | None | — | 0 | 0.00% |
-| E3_noisy_mps_bond16_shots8_counts.csv | 8 | 8 | 1 | None | — | 0 | 0.00% |
+| E3_noisy_mps_bond16_shots8_counts.csv | não contabilizado | — | — | — | — | — | — |
 
 A distância aos picos esperados é apenas uma verificação descritiva. Bond dimension e truncamento limitam a precisão do MPS; recuperar um período no pós-processamento, isoladamente, não comprova que a distribuição foi preservada.
 
 ## 4. Limitação da simulação dos circuitos físicos
 
 A tentativa Aer para E0 foi iniciada, mas foi interrompida manualmente antes de produzir contagens. A simulação lógica ideal NumPy não substitui uma distribuição de medições do circuito transpilado. A validação MPS E3 disponível é aproximada e deve ser interpretada à luz da auditoria de distribuição acima.
-A amostra ruidosa E3 de 8 shots é exploratória e pequena demais para estimar uma taxa de sucesso. Não há uma comparação estatística E0/E3 ideal e ruidosa concluída.
+O JSON correspondente registra a execução ruidosa E3 como interrompida manualmente, sem contagens. Há um CSV de oito linhas com o mesmo nome-base, mas ele não corresponde ao estado do JSON; sem evidência de proveniência, foi excluído da análise como artefato órfão. Não há uma comparação estatística E0/E3 ideal e ruidosa concluída.
 
 ## 5. Conclusão da validação reduzida
 
