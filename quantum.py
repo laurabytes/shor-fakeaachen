@@ -55,9 +55,9 @@ def _multiplication_permutation(N: int, a: int, dimension: int) -> np.ndarray:
 
 
 def modular_multiplication_matrix(N: int, a: int) -> np.ndarray:
-    """retorna u_a: |x> -> |a*x mod n> para x<n; identidade para x>=n.
+    """retorna U_a: |x> -> |a*x mod N> para x<N; identidade para x>=N.
 
-    como gcd(a, n)=1, os estados abaixo de n são permutados bijetivamente.
+    como gcd(a, N)=1, os estados abaixo de N são permutados bijetivamente.
     a identidade nos estados restantes completa um operador unitário em 2**n
     dimensões. o multiplicador 1 é válido, inclusive nas potências de u_a.
     """
@@ -121,11 +121,11 @@ def _append_controlled_basis_swap(circuit: QuantumCircuit, x: int, y: int, n: in
 def controlled_modular_multiplication_gate(
     N: int, a: int, *, synthesis: str = "auto"
 ) -> Gate:
-    """constrói |controle>|x> -> |controle>|a*x mod n> se controle=1.
+    """constrói |controle>|x> -> |controle>|a*x mod N> se controle=1.
 
-    estados x>=n e controle=0 permanecem inalterados. ``auto`` usa rotações
-    controladas de bits quando n=2**n-1 e a é potência de dois: nessa família,
-    multiplicar por 2**k módulo n é uma rotação de k posições, inclusive nos
+    estados x>=N e controle=0 permanecem inalterados. ``auto`` usa rotações
+    controladas de bits quando N=2**n-1 e a é potência de dois: nessa família,
+    multiplicar por 2**k módulo N é uma rotação de k posições, inclusive nos
     estados 0 e n. a identidade é algébrica e não depende dos fatores ou da
     ordem previamente fornecida. nos outros casos, sintetiza toda a permutação
     por mcx; os ciclos não são usados para recuperar r ou extrair fatores.
